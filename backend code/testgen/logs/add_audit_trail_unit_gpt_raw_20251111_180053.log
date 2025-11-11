@@ -1,0 +1,89 @@
+{
+  "inputs": [
+    {
+      "name": "data",
+      "type": "dict",
+      "description": "Database-like state containing optional tables and an audit_trails table.",
+      "example": "{'users': {'123': {'name': 'Alice'}}, 'audit_trails': {}}"
+    },
+    {
+      "name": "reference_id",
+      "type": "str",
+      "description": "ID of the record that was changed.",
+      "example": "123"
+    },
+    {
+      "name": "reference_type",
+      "type": "str",
+      "description": "Type of record being audited. One of user, fund, investor, subscription, commitment, redemption, trade, portfolio, holding, instrument, invoice, payment, document, report, nav, notification.",
+      "example": "user"
+    },
+    {
+      "name": "action",
+      "type": "str",
+      "description": "Action performed. One of create, update, delete, approve, cancel, process.",
+      "example": "create"
+    },
+    {
+      "name": "field_name",
+      "type": "str",
+      "description": "Field that changed. Must be null for create/delete actions.",
+      "example": "status"
+    },
+    {
+      "name": "old_value",
+      "type": "str",
+      "description": "Previous value of the field. Must be null for create actions.",
+      "example": "pending"
+    },
+    {
+      "name": "new_value",
+      "type": "str",
+      "description": "New value of the field. Must be null for delete actions.",
+      "example": "approved"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "audit_trail_id",
+      "description": "String ID of the newly created audit trail record (monotonically increasing per audit_trails table).",
+      "example": "1"
+    },
+    {
+      "key": "reference_id",
+      "description": "Echo of input reference_id.",
+      "example": "123"
+    },
+    {
+      "key": "reference_type",
+      "description": "Echo of input reference_type.",
+      "example": "user"
+    },
+    {
+      "key": "action",
+      "description": "Echo of input action.",
+      "example": "update"
+    },
+    {
+      "key": "field_name",
+      "description": "Echo of input field_name (can be null for create/delete).",
+      "example": "status"
+    },
+    {
+      "key": "old_value",
+      "description": "Echo of input old_value (must be null for create).",
+      "example": "pending"
+    },
+    {
+      "key": "new_value",
+      "description": "Echo of input new_value (must be null for delete).",
+      "example": "approved"
+    },
+    {
+      "key": "created_at",
+      "description": "Static timestamp when the audit trail was created.",
+      "example": "2025-10-01T00:00:00"
+    }
+  ],
+  "pytest_code": "# Placeholder usage for runner substitution: {USER_INPUT:reference_id}, {USER_EXPECTED:audit_trail_id}\nimport json\nimport pytest\n\n\ndef test_create_success_with_existing_user_table_and_id_start(tool_instance):\n    data = {\n        'users': {'123': {'name': 'Alice'}},\n        'audit_trails': {}\n    }\n    res = tool_instance.invoke(\n        data,\n        reference_id='123',\n        reference_type='user',\n        action='create',\n        field_name=None,\n        old_value=None,\n        new_value='initial state'\n    )\n    obj = json.loads(res)\n    # Regression: stable keys and timestamp\n    assert obj['audit_trail_id'] == '1'\n    assert obj['created_at'] == '2025-10-01T00:00:00'\n    # Echoed fields\n    assert obj['reference_id'] == '123'\n    assert obj['reference_type'] == 'user'\n    assert obj['action'] == 'create'\n    assert obj['field_name'] is None\n    assert obj['old_value'] is None\n    assert obj['new_value'] == 'initial state'\n\n\ndef test_delete_success_with_old_value_and_null_new_value(tool_instance):\n    data = {\n        'users': {'abc': {'name': 'Bob'}},\n        'audit_trails': {'1': {'dummy': True}}\n    }\n    res = tool_instance.invoke(\n        data,\n        reference_id='abc',\n        reference_type='user',\n        action='delete',\n        field_name=None,\n        old_value='previous',\n        new_value=None\n    )\n    obj = json.loads(res)\n    assert obj['reference_id'] == 'abc'\n    assert obj['reference_type'] == 'user'\n    assert obj['action'] == 'delete'\n    assert obj['field_name'] is None\n    assert obj['old_value'] == 'previous'\n    assert obj['new_value'] is None\n    assert obj['created_at'] == '2025-10-01T00:00:00'\n\n\ndef test_update_success_with_field_change_and_id_increment(tool_instance):\n    data = {\n        'funds': {'F1': {'name': 'Fund 1'}},\n        'audit_trails': {\n            '2': {'dummy': True},\n            '10': {'dummy': True}\n        }\n    }\n    res = tool_instance.invoke(\n        data,\n        reference_id='F1',\n        reference_type='fund',\n        action='update',\n        field_name='status',\n        old_value='draft',\n        new_value='approved'\n    )\n    obj = json.loads(res)\n    # ID should be max(2,10) + 1 = 11 and be string\n    assert obj['audit_trail_id'] == '11'\n    assert isinstance(obj['audit_trail_id'], str)\n    assert obj['reference_type'] == 'fund'\n    assert obj['action'] == 'update'\n    assert obj['field_name'] == 'status'\n    assert obj['old_value'] == 'draft'\n    assert obj['new_value'] == 'approved'\n\n\n# Negative tests: enums and business rules\n\ndef test_invalid_action_raises_value_error(tool_instance):\n    data = {'users': {'1': {}}}\n    with pytest.raises(ValueError) as ei:\n        tool_instance.invoke(\n            data,\n            reference_id='1',\n            reference_type='user',\n            action='archive',  # invalid\n            field_name=None,\n            old_value=None,\n            new_value=None\n        )\n    assert 'Invalid action' in str(ei.value)\n\n\ndef test_invalid_reference_type_raises_value_error(tool_instance):\n    data = {}\n    with pytest.raises(ValueError) as ei:\n        tool_instance.invoke(\n            data,\n            reference_id='1',\n            reference_type='unknown',  # invalid\n            action='create',\n            field_name=None,\n            old_value=None,\n            new_value='x'\n        )\n    assert 'Invalid reference_type' in str(ei.value)\n\n\ndef test_field_name_must_be_null_for_create(tool_instance):\n    data = {}\n    with pytest.raises(ValueError) as ei:\n        tool_instance.invoke(\n            data,\n            reference_id='1',\n            reference_type='user',\n            action='create',\n            field_name='should_be_null',\n            old_value=None,\n            new_value='x'\n        )\n    assert 'field_name should be null for create actions' in str(ei.value)\n\n\ndef test_field_name_must_be_null_for_delete(tool_instance):\n    data = {}\n    with pytest.raises(ValueError) as ei:\n        tool_instance.invoke(\n            data,\n            reference_id='1',\n            reference_type='user',\n            action='delete',\n            field_name='should_be_null',\n            old_value='y',\n            new_value=None\n        )\n    assert 'field_name should be null for delete actions' in str(ei.value)\n\n\ndef test_old_value_must_be_null_for_create(tool_instance):\n    data = {}\n    with pytest.raises(ValueError) as ei:\n        tool_instance.invoke(\n            data,\n            reference_id='1',\n            reference_type='user',\n            action='create',\n            field_name=None,\n            old_value='not allowed',\n            new_value='x'\n        )\n    assert 'old_value should be null for create actions' in str(ei.value)\n\n\ndef test_new_value_must_be_null_for_delete(tool_instance):\n    data = {}\n    with pytest.raises(ValueError) as ei:\n        tool_instance.invoke(\n            data,\n            reference_id='1',\n            reference_type='user',\n            action='delete',\n            field_name=None,\n            old_value='previous',\n            new_value='not allowed'\n        )\n    assert 'new_value should be null for delete actions' in str(ei.value)\n\n\ndef test_reference_id_not_found_raises_error(tool_instance):\n    data = {\n        'users': {'123': {'name': 'Alice'}}\n    }\n    with pytest.raises(ValueError) as ei:\n        tool_instance.invoke(\n            data,\n            reference_id='999',\n            reference_type='user',\n            action='update',\n            field_name='name',\n            old_value='A',\n            new_value='B'\n        )\n    assert 'User 999 not found' in str(ei.value)\n\n\n# Edge cases\n\ndef test_create_with_empty_data_starts_id_at_1_and_timestamp_constant(tool_instance):\n    data = {}\n    res = tool_instance.invoke(\n        data,\n        reference_id='X',\n        reference_type='user',\n        action='create',\n        field_name=None,\n        old_value=None,\n        new_value='init'\n    )\n    obj = json.loads(res)\n    assert obj['audit_trail_id'] == '1'\n    assert obj['created_at'] == '2025-10-01T00:00:00'\n\n\ndef test_update_allows_none_field_name(tool_instance):\n    data = {'users': {'5': {}}, 'audit_trails': {}}\n    res = tool_instance.invoke(\n        data,\n        reference_id='5',\n        reference_type='user',\n        action='update',\n        field_name=None,\n        old_value='old',\n        new_value='new'\n    )\n    obj = json.loads(res)\n    assert obj['field_name'] is None\n    assert obj['old_value'] == 'old'\n    assert obj['new_value'] == 'new'\n\n\ndef test_reference_id_int_matches_string_ids(tool_instance):\n    data = {\n        'users': {'5': {'name': 'NumUser'}},\n        'audit_trails': {}\n    }\n    res = tool_instance.invoke(\n        data,\n        reference_id=5,  # int provided, should match '5' in data\n        reference_type='user',\n        action='update',\n        field_name='name',\n        old_value='NumUser',\n        new_value='NumUser2'\n    )\n    obj = json.loads(res)\n    assert obj['reference_id'] == 5  # echo original type back\n    assert obj['audit_trail_id'].isdigit()\n\n\n# Schema adherence / get_info regression\n\ndef test_get_info_schema_and_required_fields(tool_instance):\n    info = tool_instance.get_info()\n    assert info['function']['name'] == 'add_audit_trail'\n    params = info['function']['parameters']\n    assert params['type'] == 'object'\n    required = set(params['required'])\n    assert {'reference_id', 'reference_type', 'action'}.issubset(required)\n    props = params['properties']\n    for key in ['reference_id', 'reference_type', 'action', 'field_name', 'old_value', 'new_value']:\n        assert key in props\n"
+}
