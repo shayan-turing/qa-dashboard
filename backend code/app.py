@@ -50,6 +50,7 @@ from policy_validator import compare_documents
 from tools_validator import run_validation
 from rule_validator import validate_file
 from api_sanity_check import sanity_bp
+from data_sanity_checker import data_bp
 from tool_validator_engine import (
     create_task, list_tasks, get_task, delete_task, run_task, run_all_tasks
 )
@@ -73,6 +74,9 @@ jwt = JWTManager(app)
 
 # Register API sanity check blueprint
 app.register_blueprint(sanity_bp)
+
+# Register data sanity checker blueprint
+app.register_blueprint(data_bp)
 
 # Register API sanity check blueprint
 
