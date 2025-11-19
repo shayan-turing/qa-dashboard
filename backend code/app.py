@@ -59,6 +59,11 @@ CORS(app, supports_credentials=True)
 app.config["JWT_SECRET_KEY"] = JWT_SECRET
 jwt = JWTManager(app)
 
+# Register API sanity check blueprint
+app.register_blueprint(sanity_bp)
+
+# Register API sanity check blueprint
+
 mongo = MongoClient(MONGO_URI)
 db = mongo["docdiff"]
 list(db.users.find({}, {"email":1, "password_hash":1}))
