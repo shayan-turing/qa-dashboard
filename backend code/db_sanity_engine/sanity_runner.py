@@ -90,3 +90,18 @@ def get_sanity_summary(user_id):
             "created_at": r["created_at"]
         } for r in reports[:10]]
     }
+
+def delete_sanity_report(user_id, report_id):
+    try:
+        result = db.reports.delete_one({
+            "_id": ObjectId(report_id),
+            "user_id": oid(user_id)
+        })
+
+        if result.deleted_count == 0:
+            return {"error": "Report not found or not authorized"}, 404
+
+        return {"status": "deleted", "id": report_id}, 200
+
+    except Exception as e:
+        return {"error": str(e)}, 500

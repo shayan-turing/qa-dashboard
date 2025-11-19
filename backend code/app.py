@@ -41,20 +41,9 @@ from tool_validator_engine import (
     create_task, list_tasks, get_task, delete_task, run_task, run_all_tasks
 )
 from db_sanity_engine import (
-    run_sanity_check, list_sanity_reports, get_sanity_summary
+    run_sanity_check, list_sanity_reports, get_sanity_summary, run_sanity_from_zip, delete_sanity_report
 )
-
-
-# ---- Custom Modules ----
-from policy_validator import compare_documents
-from tools_validator import run_validation
-from rule_validator import validate_file
-from tool_validator_engine import (
-    create_task, list_tasks, get_task, delete_task, run_task, run_all_tasks
-)
-from db_sanity_engine import (
-    run_sanity_check, list_sanity_reports, get_sanity_summary
-)
+  
 from testgen.testgen import generate_all_tests
 
 # ---------------------------------------------------------------
@@ -419,8 +408,6 @@ def delete_report(rid):
     return jsonify({"message": "Report deleted"}), 200
 
 
-from bson import ObjectId
-
 def serialize_mongo_doc(doc):
     """Recursively converts ObjectId and datetime objects to strings."""
     if isinstance(doc, list):
@@ -587,60 +574,74 @@ def preview_excel_columns():
 
 
 
-@app.post("/rule-validate")
+# @app.post("/rule-validate")
+# @jwt_required()
+# def rule_validate_api():
+#     uid = get_jwt_identity()
+#     if 'doc_file' not in request.files:
+#         return jsonify({"error": "doc_file is required"}), 400
+
+#     doc_file = request.files['doc_file']
+#     rule_key = request.form.get("rule_key", "default")
+#     title = request.form.get("title") or f"Rule Validation - {datetime.utcnow().isoformat()}"
+#     tags = (request.form.get("tags") or "rule_validation").split(",")
+#     session_id = request.form.get("session_id")
+
+#     try:
+#         temp_dir = tempfile.gettempdir()
+#         temp_path = os.path.join(temp_dir, doc_file.filename)
+#         doc_file.save(temp_path)
+
+#         results = validate_file(temp_path, rule_key=rule_key)
+#         os.remove(temp_path)
+
+#         total_rules = len(results)
+#         passed = sum(1 for r in results if r["status"] == "pass")
+#         failed = total_rules - passed
+
+#         in_meta = {
+#             "source": "rule_validation",
+#             "doc_name": doc_file.filename,
+#             "rule_key": rule_key,
+#             "total_rules": total_rules
+#         }
+
+#         report_doc = {
+#             "user_id": oid(uid),
+#             "session_id": oid(session_id) if session_id else None,
+#             "title": title,
+#             "inputs": in_meta,
+#             "results": {
+#                 "summary": {"passed": passed, "failed": failed},
+#                 "details": results
+#             },
+#             "tags": tags,
+#             "status": "completed",
+#             "report_type": "rule_validation",
+#             "created_at": now()
+#         }
+
+#         res = db.reports.insert_one(report_doc)
+#         log_action(uid, "CREATE_RULE_VALIDATION_REPORT", res.inserted_id)
+#         report_doc["_id"] = str(res.inserted_id)
+#         return jsonify({"message": "Rule validation completed", "report": report_doc}), 201
+#     except Exception as e:
+#         log_action(uid, "RULE_VALIDATION_ERROR", None, {"error": str(e)})
+#         return jsonify({"error": str(e)}), 500
+@app.post("/sanity/run-upload")
 @jwt_required()
-def rule_validate_api():
+def api_run_sanity_zip():
     uid = get_jwt_identity()
-    if 'doc_file' not in request.files:
-        return jsonify({"error": "doc_file is required"}), 400
 
-    doc_file = request.files['doc_file']
-    rule_key = request.form.get("rule_key", "default")
-    title = request.form.get("title") or f"Rule Validation - {datetime.utcnow().isoformat()}"
-    tags = (request.form.get("tags") or "rule_validation").split(",")
-    session_id = request.form.get("session_id")
+    if "file" not in request.files:
+        return jsonify({"error": "ZIP file is required"}), 400
 
-    try:
-        temp_dir = tempfile.gettempdir()
-        temp_path = os.path.join(temp_dir, doc_file.filename)
-        doc_file.save(temp_path)
+    zip_file = request.files["file"]
 
-        results = validate_file(temp_path, rule_key=rule_key)
-        os.remove(temp_path)
+    report = run_sanity_from_zip(uid, zip_file)
+    log_action(uid, "RUN_DB_SANITY_ZIP", report.get("_id"))
 
-        total_rules = len(results)
-        passed = sum(1 for r in results if r["status"] == "pass")
-        failed = total_rules - passed
-
-        in_meta = {
-            "source": "rule_validation",
-            "doc_name": doc_file.filename,
-            "rule_key": rule_key,
-            "total_rules": total_rules
-        }
-
-        report_doc = {
-            "user_id": oid(uid),
-            "session_id": oid(session_id) if session_id else None,
-            "title": title,
-            "inputs": in_meta,
-            "results": {
-                "summary": {"passed": passed, "failed": failed},
-                "details": results
-            },
-            "tags": tags,
-            "status": "completed",
-            "report_type": "rule_validation",
-            "created_at": now()
-        }
-
-        res = db.reports.insert_one(report_doc)
-        log_action(uid, "CREATE_RULE_VALIDATION_REPORT", res.inserted_id)
-        report_doc["_id"] = str(res.inserted_id)
-        return jsonify({"message": "Rule validation completed", "report": report_doc}), 201
-    except Exception as e:
-        log_action(uid, "RULE_VALIDATION_ERROR", None, {"error": str(e)})
-        return jsonify({"error": str(e)}), 500
+    return jsonify(report), 201
 
 
 @app.post("/sanity/run")
@@ -674,6 +675,19 @@ def api_sanity_summary():
     summary = get_sanity_summary(uid)
     log_action(uid, "VIEW_DB_SANITY_SUMMARY", None, summary)
     return jsonify(summary)
+
+@app.delete("/sanity/report/<report_id>")
+@jwt_required()
+def api_delete_sanity_report(report_id):
+    uid = get_jwt_identity()
+
+    result, status = delete_sanity_report(uid, report_id)
+
+    log_action(uid, "DELETE_DB_SANITY_REPORT", report_id, result)
+
+    return jsonify(result), status
+
+
 
 
 # ---------------------------------------------------------------
