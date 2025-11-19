@@ -6,10 +6,11 @@ import Validate from "layouts/validate";
 import RuleValidate from "layouts/rule-validate";
 import Tasks from "layouts/tasks";
 import Sanity from "layouts/sanity";
+import SanityReport from "layouts/sanity/report";
+import SanitySummary from "layouts/sanity/summary";
 import TestGenerator from "layouts/test-generator";
 import TestReports from "layouts/test-reports";
-import Notifications from "layouts/notifications";
-import Profile from "layouts/profile";
+
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -17,6 +18,8 @@ import ValidateDetails from "layouts/validate/details";
 import TaskDetails from "layouts/tasks/details";
 import TaskResults from "layouts/tasks/results.jsx";
 import ResultsSummary from "layouts/tasks/summary";
+import DataConsistencyChecker from "layouts/data-consistency";
+import ApiSanityChecker from "layouts/api-sanity";
 
 const routes = [
   {
@@ -46,7 +49,7 @@ const routes = [
   {
     type: "collapse",
     name: "Rule Validate",
-    key: "Rule_validate",
+    key: "rule-validate",
     icon: <Icon fontSize="small">rule</Icon>,
     route: "/rule-validate",
     component: <RuleValidate />,
@@ -62,7 +65,7 @@ const routes = [
   {
     type: "collapse",
     name: "AI TestGen",
-    key: "test_generator",
+    key: "test-generator",
     icon: <Icon fontSize="small">psychology</Icon>,
     route: "/test-generator",
     component: <TestGenerator />,
@@ -70,7 +73,7 @@ const routes = [
   {
     type: "collapse",
     name: "Test Reports",
-    key: "test_report",
+    key: "test-generator/reports",
     icon: <Icon fontSize="small">description</Icon>,
     route: "/test-generator/reports",
     component: <TestReports />,
@@ -87,36 +90,20 @@ const routes = [
 
   {
     type: "collapse",
-    name: "  Api Sanity Checker",
-    key: "api_sanity_checker",
-    icon: <Icon fontSize="small">notifications</Icon>,
-    route: "/api-sanity-checker",
-    component: <Notifications />,
+    name: "  Api Sanity ",
+    key: "api-sanity",
+    icon: <Icon fontSize="small">api</Icon>,
+    route: "/api-sanity",
+    component: <ApiSanityChecker />,
   },
 
   {
     type: "collapse",
-    name: "Data consistency Checker",
-    key: "data_consistency_checker",
-    icon: <Icon fontSize="small">notifications</Icon>,
-    route: "/data-consistency-checker",
-    component: <Notifications />,
-  },
-  {
-    type: "collapse",
-    name: "Notifications",
-    key: "notifications",
-    icon: <Icon fontSize="small">notifications</Icon>,
-    route: "/notifications",
-    component: <Notifications />,
-  },
-  {
-    type: "collapse",
-    name: "Profile",
-    key: "profile",
-    icon: <Icon fontSize="small">person</Icon>,
-    route: "/profile",
-    component: <Profile />,
+    name: "Data consistency",
+    key: "data-consistency",
+    icon: <Icon fontSize="small">fact_check</Icon>,
+    route: "/data-consistency",
+    component: <DataConsistencyChecker />,
   },
 
   {
@@ -148,6 +135,18 @@ const routes = [
     route: "/tasks/results",
     component: <ResultsSummary />,
     key: "results-summary",
+  },
+  {
+    type: "hidden",
+    route: "/sanity/report",
+    component: <SanityReport />,
+    key: "sanity-report",
+  },
+  {
+    type: "hidden",
+    route: "/sanity/summary",
+    component: <SanitySummary />,
+    key: "sanity-summary",
   },
 ];
 
