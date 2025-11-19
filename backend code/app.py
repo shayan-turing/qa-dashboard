@@ -41,8 +41,18 @@ from tool_validator_engine import (
     create_task, list_tasks, get_task, delete_task, run_task, run_all_tasks
 )
 from db_sanity_engine import (
-    run_sanity_check, list_sanity_reports, get_sanity_summary, run_sanity_from_zip, delete_sanity_report
+    run_sanity_check, list_sanity_reports, get_sanity_summary,run_sanity_from_zip,delete_sanity_report
 )
+
+
+# ---- Custom Modules ----
+from policy_validator import compare_documents
+from tools_validator import run_validation
+from rule_validator import validate_file
+from api_sanity_check import sanity_bp
+from data_sanity_checker import data_bp
+ 
+ 
   
 from testgen.testgen import generate_all_tests
 
@@ -61,6 +71,9 @@ jwt = JWTManager(app)
 
 # Register API sanity check blueprint
 app.register_blueprint(sanity_bp)
+
+# Register data sanity checker blueprint
+app.register_blueprint(data_bp)
 
 # Register API sanity check blueprint
 
