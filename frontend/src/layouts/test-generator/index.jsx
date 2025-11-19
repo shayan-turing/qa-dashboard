@@ -1,9 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - AI Test Generator Page
-=========================================================
-*/
-
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { io } from "socket.io-client";
 
@@ -332,7 +326,6 @@ export default function TestGenerator() {
           </Grid>
         </Grid>
       </MDBox>
-      <Footer />
 
       {/* Toast Notification */}
       <Snackbar

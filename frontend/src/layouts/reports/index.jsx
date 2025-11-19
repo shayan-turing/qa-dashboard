@@ -1,10 +1,10 @@
 /**
 =========================================================
-* Material Dashboard 2 React - Validate Tools Page
+* Material Dashboard 2 React - Reports Page
 =========================================================
 */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 // @mui material components
@@ -22,14 +22,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Icon from "@mui/material/Icon";
 import Box from "@mui/material/Box";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
-import Chip from "@mui/material/Chip";
-import OutlinedInput from "@mui/material/OutlinedInput";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -44,24 +36,19 @@ import Footer from "examples/Footer";
 // Auth context
 import { useAuth } from "../../lib/auth";
 
-export default function Validate() {
+export default function Reports() {
   const { apiFetch, apiUpload } = useAuth();
+  const [items, setItems] = useState([]);
+  const [cursor, setCursor] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Upload state
-  const [excel, setExcel] = useState(null);
-  const [doc, setDoc] = useState(null);
-  const [sheets, setSheets] = useState({});
-  const [selectedSheet, setSelectedSheet] = useState("");
-  const [columns, setColumns] = useState([]);
-  const [selectedCols, setSelectedCols] = useState([]);
-  const [threshold, setThreshold] = useState(0.5);
-  const [useLLM, setUseLLM] = useState(true);
+  // Upload form state
+  const [file1, setFile1] = useState(null);
+  const [file2, setFile2] = useState(null);
+  const [title, setTitle] = useState("");
+  const [tags, setTags] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-
-  // Saved reports
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   // Toast state
   const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
@@ -69,130 +56,94 @@ export default function Validate() {
   // Modal state
   const [confirmDialog, setConfirmDialog] = useState({ open: false, onConfirm: null });
 
-  // Load Validation Reports
+  // 📥 Load reports
   const loadReports = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiFetch("/validate");
+      const url = "/reports" + (cursor ? `?cursor=${cursor}` : "");
+      const res = await apiFetch(url);
       const data = await res.json();
       if (res.ok) {
         setItems(data.items || []);
+        setCursor(data.next_cursor);
       } else {
         setToast({
           open: true,
-          message: data.error || "Failed to load validations",
+          message: data.error || "Failed to load reports",
           severity: "error",
         });
       }
-    } catch {
-      setToast({ open: true, message: "Network error", severity: "error" });
+    } catch (e) {
+      setToast({ open: true, message: "Network error loading reports", severity: "error" });
     } finally {
       setLoading(false);
     }
-  }, [apiFetch]);
+  }, [apiFetch, cursor]);
 
   useEffect(() => {
     loadReports();
   }, []);
 
-  // Load Excel sheet names and columns
-  const handleExcelUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setExcel(file);
-
-    const fd = new FormData();
-    fd.append("excel_file", file);
-
-    try {
-      const res = await apiUpload("/validate/columns", fd);
-      if (res.ok && res.json?.sheets) {
-        setSheets(res.json.sheets);
-        const first = Object.keys(res.json.sheets)[0];
-        setSelectedSheet(first);
-        setColumns(res.json.sheets[first]);
-        setToast({ open: true, message: "Excel loaded successfully", severity: "success" });
-      } else {
-        setToast({
-          open: true,
-          message: res.json?.error || "Failed to load Excel",
-          severity: "error",
-        });
-      }
-    } catch {
-      setToast({ open: true, message: "Error reading Excel file", severity: "error" });
-    }
-  };
-
-  const handleSheetChange = (sheet) => {
-    setSelectedSheet(sheet);
-    setColumns(sheets[sheet] || []);
-    setSelectedCols([]);
-  };
-
-  // Run Validation
-  const submitValidation = async (e) => {
+  // 🧩 Upload documents to create a report
+  const handleUpload = async (e) => {
     e.preventDefault();
-    if (!excel || !doc) {
+    if (!file1 || !file2) {
       setToast({ open: true, message: "Please upload both files", severity: "error" });
       return;
     }
-    if (!selectedSheet || selectedCols.length === 0) {
-      setToast({ open: true, message: "Please select a sheet and columns", severity: "error" });
-      return;
-    }
 
     const fd = new FormData();
-    fd.append("excel_file", excel);
-    fd.append("doc_file", doc);
-    fd.append("sheet_name", selectedSheet);
-    fd.append("threshold", threshold);
-    fd.append("use_llm_reasoning", useLLM);
+    fd.append("file1", file1);
+    fd.append("file2", file2);
+    if (title) fd.append("title", title);
+    if (tags) fd.append("tags", tags);
 
     setIsUploading(true);
     setProgress(0);
 
     try {
-      const res = await apiUpload("/validate", fd, { onProgress: setProgress });
+      const res = await apiUpload("/reports", fd, { onProgress: setProgress });
       if (res.ok) {
-        setToast({ open: true, message: "Validation completed", severity: "success" });
+        setToast({ open: true, message: "Report created successfully", severity: "success" });
+        setFile1(null);
+        setFile2(null);
+        setTitle("");
+        setTags("");
+        // Reset file inputs
+        document.getElementById("file1-input").value = "";
+        document.getElementById("file2-input").value = "";
         loadReports();
-        // Reset form
-        setExcel(null);
-        setDoc(null);
-        setSheets({});
-        setSelectedSheet("");
-        setColumns([]);
-        setSelectedCols([]);
-        document.getElementById("excel-input").value = "";
-        document.getElementById("doc-input").value = "";
       } else {
         setToast({
           open: true,
-          message: res.json?.error || "Validation failed",
+          message: res.json?.error || "Failed to create report",
           severity: "error",
         });
       }
-    } catch {
-      setToast({ open: true, message: "Upload failed", severity: "error" });
+    } catch (err) {
+      setToast({ open: true, message: "Upload error", severity: "error" });
     } finally {
       setIsUploading(false);
       setProgress(0);
     }
   };
 
-  // Delete Report
+  // 🗑️ Delete report
   const remove = async (id) => {
     setConfirmDialog({
       open: true,
       onConfirm: async () => {
-        const res = await apiFetch(`/validate/${id}`, { method: "DELETE" });
-        const data = await res.json();
-        if (res.ok) {
-          setToast({ open: true, message: "Deleted", severity: "success" });
-          setItems(items.filter((x) => (x._id || x.id) !== id));
-        } else {
-          setToast({ open: true, message: data.error || "Delete failed", severity: "error" });
+        try {
+          const res = await apiFetch(`/reports/${id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (res.ok) {
+            setToast({ open: true, message: "Report deleted", severity: "success" });
+            setItems(items.filter((x) => (x._id || x.id) !== id));
+          } else {
+            setToast({ open: true, message: data.error || "Delete failed", severity: "error" });
+          }
+        } catch {
+          setToast({ open: true, message: "Network error deleting report", severity: "error" });
         }
         setConfirmDialog({ open: false, onConfirm: null });
       },
@@ -207,8 +158,8 @@ export default function Validate() {
           {/* Header */}
           <Grid item xs={12}>
             <MDTypography variant="h4" fontWeight="medium">
-              <Icon sx={{ verticalAlign: "middle", mr: 1 }}>verified</Icon>
-              Validation Dashboard
+              <Icon sx={{ verticalAlign: "middle", mr: 1 }}>assessment</Icon>
+              Reports Dashboard
             </MDTypography>
           </Grid>
 
@@ -217,12 +168,28 @@ export default function Validate() {
             <Card>
               <MDBox p={3}>
                 <MDTypography variant="h5" fontWeight="medium" mb={3}>
-                  Run New Validation
+                  Create New Report
                 </MDTypography>
-                <Box component="form" onSubmit={submitValidation}>
-                  {/* Excel Upload */}
+                <Box component="form" onSubmit={handleUpload}>
+                  <TextField
+                    fullWidth
+                    label="Title (optional)"
+                    variant="outlined"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Tags (comma separated)"
+                    variant="outlined"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+
                   <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                    Upload Excel File (.xlsx, .xls)
+                    Upload Document 1
                   </MDTypography>
                   <Button
                     variant="outlined"
@@ -231,63 +198,18 @@ export default function Validate() {
                     sx={{ mb: 2, justifyContent: "flex-start" }}
                   >
                     <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                    {excel ? excel.name : "Choose Excel File"}
+                    {file1 ? file1.name : "Choose File"}
                     <input
-                      id="excel-input"
+                      id="file1-input"
                       type="file"
                       hidden
-                      accept=".xlsx,.xls"
-                      onChange={handleExcelUpload}
+                      accept=".txt,.docx,.pdf,.md"
+                      onChange={(e) => setFile1(e.target.files?.[0] || null)}
                     />
                   </Button>
 
-                  {/* Sheet Selection */}
-                  {Object.keys(sheets).length > 0 && (
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Select Sheet</InputLabel>
-                      <Select
-                        value={selectedSheet}
-                        label="Select Sheet"
-                        onChange={(e) => handleSheetChange(e.target.value)}
-                      >
-                        {Object.keys(sheets).map((s) => (
-                          <MenuItem key={s} value={s}>
-                            {s}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
-
-                  {/* Columns Selection */}
-                  {columns.length > 0 && (
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Select Column(s)</InputLabel>
-                      <Select
-                        multiple
-                        value={selectedCols}
-                        onChange={(e) => setSelectedCols(e.target.value)}
-                        input={<OutlinedInput label="Select Column(s)" />}
-                        renderValue={(selected) => (
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                            {selected.map((value) => (
-                              <Chip key={value} label={value} size="small" />
-                            ))}
-                          </Box>
-                        )}
-                      >
-                        {columns.map((col) => (
-                          <MenuItem key={col} value={col}>
-                            {col}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
-
-                  {/* Document Upload */}
                   <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                    Upload Document (.txt, .docx, .pdf)
+                    Upload Document 2
                   </MDTypography>
                   <Button
                     variant="outlined"
@@ -296,52 +218,25 @@ export default function Validate() {
                     sx={{ mb: 2, justifyContent: "flex-start" }}
                   >
                     <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                    {doc ? doc.name : "Choose Document"}
+                    {file2 ? file2.name : "Choose File"}
                     <input
-                      id="doc-input"
+                      id="file2-input"
                       type="file"
                       hidden
-                      accept=".txt,.docx,.pdf"
-                      onChange={(e) => setDoc(e.target.files?.[0] || null)}
+                      accept=".txt,.docx,.pdf,.md"
+                      onChange={(e) => setFile2(e.target.files?.[0] || null)}
                     />
                   </Button>
 
-                  {/* Threshold and LLM Settings */}
-                  <Grid container spacing={2} sx={{ mb: 2 }}>
-                    <Grid item xs={6}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Threshold"
-                        inputProps={{ step: 0.01, min: 0, max: 1 }}
-                        value={threshold}
-                        onChange={(e) => setThreshold(e.target.value)}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={useLLM}
-                            onChange={(e) => setUseLLM(e.target.checked)}
-                          />
-                        }
-                        label="Use LLM Reasoning"
-                      />
-                    </Grid>
-                  </Grid>
-
-                  {/* Progress Bar */}
                   {progress > 0 && progress < 100 && (
                     <MDBox mb={2}>
                       <LinearProgress variant="determinate" value={progress} />
                       <MDTypography variant="caption" color="text">
-                        {progress}% completed
+                        {progress}% uploaded
                       </MDTypography>
                     </MDBox>
                   )}
 
-                  {/* Submit Button */}
                   <MDButton
                     variant="gradient"
                     color="info"
@@ -349,28 +244,28 @@ export default function Validate() {
                     type="submit"
                     disabled={isUploading}
                   >
-                    {isUploading ? "Validating..." : "Run Validation"}
+                    {isUploading ? "Uploading..." : "Create Report"}
                   </MDButton>
                 </Box>
               </MDBox>
             </Card>
           </Grid>
 
-          {/* Previous Validations */}
+          {/* Reports List */}
           <Grid item xs={12}>
             <Card>
               <MDBox p={3}>
                 <MDTypography variant="h5" fontWeight="medium" mb={3}>
-                  Previous Validations
+                  Saved Reports
                 </MDTypography>
 
                 {loading ? (
                   <MDTypography variant="body2" color="text">
-                    Loading...
+                    Loading reports...
                   </MDTypography>
                 ) : items.length === 0 ? (
                   <MDTypography variant="body2" color="text">
-                    No validations found.
+                    No reports yet.
                   </MDTypography>
                 ) : (
                   <Grid container spacing={2}>
@@ -384,27 +279,29 @@ export default function Validate() {
                                 {r.title}
                               </MDTypography>
                               <MDTypography variant="caption" color="text" mb={2} display="block">
-                                {r.report_type || "validation"} ·{" "}
+                                {r.report_type || "comparison"} ·{" "}
                                 {r.created_at ? new Date(r.created_at).toLocaleString() : ""}
                               </MDTypography>
 
                               <MDBox mb={2}>
                                 <MDTypography variant="body2" component="div">
-                                  <strong>Tools:</strong> {r.results?.summary?.total_tools || 0} ·{" "}
-                                  <strong>Matched:</strong> {r.results?.summary?.matched || 0}
+                                  <strong>Jaccard:</strong> {r.results?.jaccard?.toFixed(3)} ·{" "}
+                                  <strong>TF-IDF:</strong> {r.results?.tfidf?.toFixed(3)} ·{" "}
+                                  <strong>Semantic:</strong> {r.results?.semantic?.toFixed(3)} ·{" "}
+                                  <strong>LLM:</strong> {r.results?.llm?.toFixed(3)}
                                 </MDTypography>
                               </MDBox>
 
                               <MDBox display="flex" gap={2}>
                                 <MDButton
                                   component={Link}
-                                  to={`/validate/${id}`}
+                                  to={`/reports/${id}`}
                                   variant="gradient"
                                   color="info"
                                   size="small"
                                 >
                                   <Icon sx={{ mr: 0.5 }}>visibility</Icon>
-                                  Open Details
+                                  View Details
                                 </MDButton>
                                 <MDButton
                                   variant="gradient"
@@ -428,7 +325,6 @@ export default function Validate() {
           </Grid>
         </Grid>
       </MDBox>
-      <Footer />
 
       {/* Toast Notification */}
       <Snackbar
@@ -451,7 +347,7 @@ export default function Validate() {
         open={confirmDialog.open}
         onClose={() => setConfirmDialog({ open: false, onConfirm: null })}
       >
-        <DialogTitle>Delete Validation Report?</DialogTitle>
+        <DialogTitle>Delete Report?</DialogTitle>
         <DialogContent>
           <DialogContentText>This action cannot be undone.</DialogContentText>
         </DialogContent>

@@ -1,9 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - Rule Validate Page
-=========================================================
-*/
-
 import React, { useState } from "react";
 
 // @mui material components
@@ -178,7 +172,6 @@ export default function RuleValidate() {
           )}
         </Grid>
       </MDBox>
-      <Footer />
 
       {/* Toast Notification */}
       <Snackbar

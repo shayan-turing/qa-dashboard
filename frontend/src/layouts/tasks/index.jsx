@@ -1,9 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - Tasks Page
-=========================================================
-*/
-
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -409,7 +403,6 @@ export default function Tasks() {
           </Grid>
         </Grid>
       </MDBox>
-      <Footer />
 
       {/* Toast Notification */}
       <Snackbar

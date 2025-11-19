@@ -1,20 +1,22 @@
 // Material Dashboard 2 React layouts
 import Dashboard from "layouts/dashboard";
 import Reports from "layouts/reports";
+import ReportDetails from "layouts/reports/details";
 import Validate from "layouts/validate";
 import RuleValidate from "layouts/rule-validate";
 import Tasks from "layouts/tasks";
 import Sanity from "layouts/sanity";
 import TestGenerator from "layouts/test-generator";
 import TestReports from "layouts/test-reports";
-import Tables from "layouts/tables";
-import Billing from "layouts/billing";
-import RTL from "layouts/rtl";
 import Notifications from "layouts/notifications";
 import Profile from "layouts/profile";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
+import ValidateDetails from "layouts/validate/details";
+import TaskDetails from "layouts/tasks/details";
+import TaskResults from "layouts/tasks/results.jsx";
+import ResultsSummary from "layouts/tasks/summary";
 
 const routes = [
   {
@@ -85,6 +87,23 @@ const routes = [
 
   {
     type: "collapse",
+    name: "  Api Sanity Checker",
+    key: "api_sanity_checker",
+    icon: <Icon fontSize="small">notifications</Icon>,
+    route: "/api-sanity-checker",
+    component: <Notifications />,
+  },
+
+  {
+    type: "collapse",
+    name: "Data consistency Checker",
+    key: "data_consistency_checker",
+    icon: <Icon fontSize="small">notifications</Icon>,
+    route: "/data-consistency-checker",
+    component: <Notifications />,
+  },
+  {
+    type: "collapse",
     name: "Notifications",
     key: "notifications",
     icon: <Icon fontSize="small">notifications</Icon>,
@@ -98,6 +117,37 @@ const routes = [
     icon: <Icon fontSize="small">person</Icon>,
     route: "/profile",
     component: <Profile />,
+  },
+
+  {
+    type: "hidden",
+    route: "/reports/:id",
+    component: <ReportDetails />,
+    key: "report-details",
+  },
+  {
+    type: "hidden",
+    route: "/validate/:id",
+    component: <ValidateDetails />,
+    key: "validate-details",
+  },
+  {
+    type: "hidden",
+    route: "/tasks/:id/view",
+    component: <TaskDetails />,
+    key: "task-details",
+  },
+  {
+    type: "hidden",
+    route: "/tasks/:id/results",
+    component: <TaskResults />,
+    key: "task-results",
+  },
+  {
+    type: "hidden",
+    route: "/tasks/results",
+    component: <ResultsSummary />,
+    key: "results-summary",
   },
 ];
 

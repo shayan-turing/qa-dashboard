@@ -1,9 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - Test Reports Page
-=========================================================
-*/
-
 import React, { useEffect, useState } from "react";
 
 // @mui material components
@@ -253,7 +247,6 @@ export default function TestReports() {
           </Grid>
         </Grid>
       </MDBox>
-      <Footer />
 
       {/* Toast Notification */}
       <Snackbar

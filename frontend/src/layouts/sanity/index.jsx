@@ -1,9 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - DB Sanity Page
-=========================================================
-*/
-
 import React, { useEffect, useState } from "react";
 
 // @mui material components
@@ -244,7 +238,6 @@ export default function Sanity() {
           </Grid>
         </Grid>
       </MDBox>
-      <Footer />
 
       {/* Toast Notification */}
       <Snackbar
