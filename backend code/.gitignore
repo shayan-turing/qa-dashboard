@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL Python files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Flask instance and config files
+instance/
+.env
+.env.*
+config.py
+
+# SQLite database files
+*.db
+*.sqlite3
+
+# Logs and local storage
+logs/
+local_storage/
+*.log
+
+# Uploaded files and temp
+uploads/
+*.tmp
+*.bak
+*.swp
+
+# Coverage and test output
+.coverage
+htmlcov/
+.pytest_cache/
+testgen/generated_tests/
+testgen/logs/
+
+# OS / Editor / IDE
+.DS_Store
+*.vscode/
+*.idea/
+*.sublime-workspace
+*.sublime-project
+Thumbs.db
+
+# Docker
+*.pid
+*.sock
+docker-compose.override.yml
+
+# Misc
+*.zip
+*.tar.gz
+*.egg-info/
+dist/
+build/
