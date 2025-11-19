@@ -52,7 +52,7 @@ MEMORY_FILE = RUN_DIR / "test_memory.json"  # run-scoped memory file (copied to 
 for d in (OUTPUT_DIR, LOG_DIR, SCREENSHOT_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
-TEST_TYPES = ["unit", "smoke", "sanity", "integration", "regression"]
+TEST_TYPES = ["unit"]
 
 # ======================================================================
 #                          STORAGE MANAGER
@@ -180,10 +180,10 @@ def find_tool_files(base_path: str) -> List[str]:
 def get_test_type_description(ttype: str) -> str:
     return {
         "unit": "Focus on core logic validation across all branches, schema adherence, and error handling.",
-        "smoke": "Ensure module imports and invoke() executes without crashes on a minimal happy path.",
-        "sanity": "Check that invoke() returns valid string/JSON and key outputs exist.",
-        "integration": "Combine this tool logically with related tools (if discoverable) or with a realistic in-memory dataset.",
-        "regression": "Snapshot/contract checks: keys present, types stable, ordering stable; optional screenshots taken by runner.",
+        # "smoke": "Ensure module imports and invoke() executes without crashes on a minimal happy path.",
+        # "sanity": "Check that invoke() returns valid string/JSON and key outputs exist.",
+        # "integration": "Combine this tool logically with related tools (if discoverable) or with a realistic in-memory dataset.",
+        # "regression": "Snapshot/contract checks: keys present, types stable, ordering stable; optional screenshots taken by runner.",
     }.get(ttype, "")
 
 
@@ -564,7 +564,7 @@ def gpt_generate_and_write(
     max_passes: int = 3
 ) -> Dict[str, Any]:
     """
-    Generates pytest code using GPT, writes it to file,
+    Generates pytest code using GPT, writes it to file, 
     injects the dynamic tool fixture, and incrementally enriches coverage.
     """
 
