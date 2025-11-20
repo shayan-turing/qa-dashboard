@@ -41,7 +41,7 @@ from tool_validator_engine import (
     create_task, list_tasks, get_task, delete_task, run_task, run_all_tasks
 )
 from db_sanity_engine import (
-    run_sanity_check, list_sanity_reports, get_sanity_summary,run_sanity_from_zip,delete_sanity_report
+    run_sanity_check, list_sanity_reports, get_sanity_summary,run_sanity_from_zip,delete_sanity_report, get_sanity_report
 )
 
 
@@ -725,7 +725,18 @@ def api_delete_sanity_report(report_id):
 
     return jsonify(result), status
 
+@app.get("/sanity/report/<report_id>")
+@jwt_required()
+def api_get_sanity_report(report_id):
+    uid = get_jwt_identity()
 
+    report = get_sanity_report(uid, report_id)
+    if not report:
+        log_action(uid, "VIEW_DB_SANITY_REPORT", report_id, {"error": "Not found"})
+        return jsonify({"error": "Report not found"}), 404
+
+    log_action(uid, "VIEW_DB_SANITY_REPORT", report_id)
+    return jsonify(report), 200
 
 
 # ---------------------------------------------------------------
