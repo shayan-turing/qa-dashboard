@@ -65,6 +65,7 @@ MONGO_URI = os.getenv("MONGO_URI")
 JWT_SECRET = os.getenv("JWT_SECRET", "this-is-jwt")
 
 app = Flask(__name__)
+app.secret_key = JWT_SECRET  # Required for Flask sessions
 CORS(app, supports_credentials=True)
 app.config["JWT_SECRET_KEY"] = JWT_SECRET
 jwt = JWTManager(app)
