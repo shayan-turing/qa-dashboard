@@ -58,10 +58,17 @@ export default function Validate() {
   const [loading, setLoading] = useState(true);
 
   // Toast state
-  const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   // Modal state
-  const [confirmDialog, setConfirmDialog] = useState({ open: false, onConfirm: null });
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    onConfirm: null,
+  });
 
   // Load Validation Reports
   const loadReports = useCallback(async () => {
@@ -105,7 +112,11 @@ export default function Validate() {
         const first = Object.keys(res.json.sheets)[0];
         setSelectedSheet(first);
         setColumns(res.json.sheets[first]);
-        setToast({ open: true, message: "Excel loaded successfully", severity: "success" });
+        setToast({
+          open: true,
+          message: "Excel loaded successfully",
+          severity: "success",
+        });
       } else {
         setToast({
           open: true,
@@ -114,7 +125,11 @@ export default function Validate() {
         });
       }
     } catch {
-      setToast({ open: true, message: "Error reading Excel file", severity: "error" });
+      setToast({
+        open: true,
+        message: "Error reading Excel file",
+        severity: "error",
+      });
     }
   };
 
@@ -128,11 +143,19 @@ export default function Validate() {
   const submitValidation = async (e) => {
     e.preventDefault();
     if (!excel || !doc) {
-      setToast({ open: true, message: "Please upload both files", severity: "error" });
+      setToast({
+        open: true,
+        message: "Please upload both files",
+        severity: "error",
+      });
       return;
     }
     if (!selectedSheet || selectedCols.length === 0) {
-      setToast({ open: true, message: "Please select a sheet and columns", severity: "error" });
+      setToast({
+        open: true,
+        message: "Please select a sheet and columns",
+        severity: "error",
+      });
       return;
     }
 
@@ -149,7 +172,11 @@ export default function Validate() {
     try {
       const res = await apiUpload("/validate", fd, { onProgress: setProgress });
       if (res.ok) {
-        setToast({ open: true, message: "Validation completed", severity: "success" });
+        setToast({
+          open: true,
+          message: "Validation completed",
+          severity: "success",
+        });
         loadReports();
         // Reset form
         setExcel(null);
@@ -186,7 +213,11 @@ export default function Validate() {
           setToast({ open: true, message: "Deleted", severity: "success" });
           setItems(items.filter((x) => (x._id || x.id) !== id));
         } else {
-          setToast({ open: true, message: data.error || "Delete failed", severity: "error" });
+          setToast({
+            open: true,
+            message: data.error || "Delete failed",
+            severity: "error",
+          });
         }
         setConfirmDialog({ open: false, onConfirm: null });
       },
@@ -207,102 +238,121 @@ export default function Validate() {
           </Grid>
 
           {/* Upload Form */}
-          <Grid item xs={12} lg={6}>
+          <Grid item xs={12}>
             <Card>
               <MDBox p={3}>
                 <MDTypography variant="h5" fontWeight="medium" mb={3}>
                   Run New Validation
                 </MDTypography>
+
                 <Box component="form" onSubmit={submitValidation}>
-                  {/* Excel Upload */}
-                  <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                    Upload Excel File (.xlsx, .xls)
-                  </MDTypography>
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    fullWidth
-                    sx={{ mb: 2, justifyContent: "flex-start" }}
-                  >
-                    <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                    {excel ? excel.name : "Choose Excel File"}
-                    <input
-                      id="excel-input"
-                      type="file"
-                      hidden
-                      accept=".xlsx,.xls"
-                      onChange={handleExcelUpload}
-                    />
-                  </Button>
-
-                  {/* Sheet Selection */}
-                  {Object.keys(sheets).length > 0 && (
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Select Sheet</InputLabel>
-                      <Select
-                        value={selectedSheet}
-                        label="Select Sheet"
-                        onChange={(e) => handleSheetChange(e.target.value)}
+                  <Grid container spacing={2}>
+                    {/* Excel Upload */}
+                    <Grid item xs={12} lg={6}>
+                      <MDTypography variant="body2" fontWeight="medium" mb={1}>
+                        Upload Excel File (.xlsx, .xls)
+                      </MDTypography>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        fullWidth
+                        sx={{ justifyContent: "flex-start" }}
                       >
-                        {Object.keys(sheets).map((s) => (
-                          <MenuItem key={s} value={s}>
-                            {s}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
+                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                        {excel ? excel.name : "Choose Excel File"}
+                        <input
+                          id="excel-input"
+                          type="file"
+                          hidden
+                          accept=".xlsx,.xls"
+                          onChange={handleExcelUpload}
+                        />
+                      </Button>
+                    </Grid>
 
-                  {/* Columns Selection */}
-                  {columns.length > 0 && (
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Select Column(s)</InputLabel>
-                      <Select
-                        multiple
-                        value={selectedCols}
-                        onChange={(e) => setSelectedCols(e.target.value)}
-                        input={<OutlinedInput label="Select Column(s)" />}
-                        renderValue={(selected) => (
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                            {selected.map((value) => (
-                              <Chip key={value} label={value} size="small" />
+                    {/* Sheet Selection */}
+                    {Object.keys(sheets).length > 0 && (
+                      <Grid item xs={12} lg={6}>
+                        <FormControl fullWidth>
+                          <InputLabel>Select Sheet</InputLabel>
+                          <Select
+                            value={selectedSheet}
+                            label="Select Sheet"
+                            onChange={(e) => handleSheetChange(e.target.value)}
+                          >
+                            {Object.keys(sheets).map((s) => (
+                              <MenuItem key={s} value={s}>
+                                {s}
+                              </MenuItem>
                             ))}
-                          </Box>
-                        )}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    )}
+
+                    {/* Columns Selection */}
+                    {columns.length > 0 && (
+                      <Grid item xs={12}>
+                        <FormControl fullWidth>
+                          <InputLabel>Select Column(s)</InputLabel>
+                          <Select
+                            multiple
+                            value={selectedCols}
+                            onChange={(e) => setSelectedCols(e.target.value)}
+                            input={<OutlinedInput label="Select Column(s)" />}
+                            renderValue={(selected) => (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 0.5,
+                                }}
+                              >
+                                {selected.map((value) => (
+                                  <Chip
+                                    key={value}
+                                    label={value}
+                                    size="small"
+                                  />
+                                ))}
+                              </Box>
+                            )}
+                          >
+                            {columns.map((col) => (
+                              <MenuItem key={col} value={col}>
+                                {col}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    )}
+
+                    {/* Document Upload */}
+                    <Grid item xs={12} lg={6}>
+                      <MDTypography variant="body2" fontWeight="medium" mb={1}>
+                        Upload Document (.txt, .docx, .pdf)
+                      </MDTypography>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        fullWidth
+                        sx={{ justifyContent: "flex-start" }}
                       >
-                        {columns.map((col) => (
-                          <MenuItem key={col} value={col}>
-                            {col}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
+                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                        {doc ? doc.name : "Choose Document"}
+                        <input
+                          id="doc-input"
+                          type="file"
+                          hidden
+                          accept=".txt,.docx,.pdf"
+                          onChange={(e) => setDoc(e.target.files?.[0] || null)}
+                        />
+                      </Button>
+                    </Grid>
 
-                  {/* Document Upload */}
-                  <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                    Upload Document (.txt, .docx, .pdf)
-                  </MDTypography>
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    fullWidth
-                    sx={{ mb: 2, justifyContent: "flex-start" }}
-                  >
-                    <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                    {doc ? doc.name : "Choose Document"}
-                    <input
-                      id="doc-input"
-                      type="file"
-                      hidden
-                      accept=".txt,.docx,.pdf"
-                      onChange={(e) => setDoc(e.target.files?.[0] || null)}
-                    />
-                  </Button>
-
-                  {/* Threshold and LLM Settings */}
-                  <Grid container spacing={2} sx={{ mb: 2 }}>
-                    <Grid item xs={6}>
+                    {/* Threshold + LLM Settings */}
+                    <Grid item xs={12} lg={6}>
                       <TextField
                         fullWidth
                         type="number"
@@ -312,7 +362,8 @@ export default function Validate() {
                         onChange={(e) => setThreshold(e.target.value)}
                       />
                     </Grid>
-                    <Grid item xs={6}>
+
+                    <Grid item xs={12} lg={6}>
                       <FormControlLabel
                         control={
                           <Checkbox
@@ -327,7 +378,7 @@ export default function Validate() {
 
                   {/* Progress Bar */}
                   {progress > 0 && progress < 100 && (
-                    <MDBox mb={2}>
+                    <MDBox mt={2}>
                       <LinearProgress variant="determinate" value={progress} />
                       <MDTypography variant="caption" color="text">
                         {progress}% completed
@@ -335,13 +386,13 @@ export default function Validate() {
                     </MDBox>
                   )}
 
-                  {/* Submit Button */}
+                  {/* Submit */}
                   <MDButton
                     variant="gradient"
                     color="info"
-                    fullWidth
                     type="submit"
                     disabled={isUploading}
+                    sx={{ mt: 2 }}
                   >
                     {isUploading ? "Validating..." : "Run Validation"}
                   </MDButton>
@@ -349,79 +400,87 @@ export default function Validate() {
               </MDBox>
             </Card>
           </Grid>
-
-          {/* Previous Validations */}
-          <Grid item xs={12}>
-            <Card>
-              <MDBox p={3}>
-                <MDTypography variant="h5" fontWeight="medium" mb={3}>
-                  Previous Validations
-                </MDTypography>
-
-                {loading ? (
-                  <MDTypography variant="body2" color="text">
-                    Loading...
-                  </MDTypography>
-                ) : items.length === 0 ? (
-                  <MDTypography variant="body2" color="text">
-                    No validations found.
-                  </MDTypography>
-                ) : (
-                  <Grid container spacing={2}>
-                    {items.map((r) => {
-                      const id = r._id || r.id;
-                      return (
-                        <Grid item xs={12} key={id}>
-                          <Card variant="outlined">
-                            <MDBox p={3}>
-                              <MDTypography variant="h6" fontWeight="medium" mb={1}>
-                                {r.title}
-                              </MDTypography>
-                              <MDTypography variant="caption" color="text" mb={2} display="block">
-                                {r.report_type || "validation"} ·{" "}
-                                {r.created_at ? new Date(r.created_at).toLocaleString() : ""}
-                              </MDTypography>
-
-                              <MDBox mb={2}>
-                                <MDTypography variant="body2" component="div">
-                                  <strong>Tools:</strong> {r.results?.summary?.total_tools || 0} ·{" "}
-                                  <strong>Matched:</strong> {r.results?.summary?.matched || 0}
-                                </MDTypography>
-                              </MDBox>
-
-                              <MDBox display="flex" gap={2}>
-                                <MDButton
-                                  component={Link}
-                                  to={`/validate/${id}`}
-                                  variant="gradient"
-                                  color="info"
-                                  size="small"
-                                >
-                                  <Icon sx={{ mr: 0.5 }}>visibility</Icon>
-                                  Open Details
-                                </MDButton>
-                                <MDButton
-                                  variant="gradient"
-                                  color="error"
-                                  size="small"
-                                  onClick={() => remove(id)}
-                                >
-                                  <Icon sx={{ mr: 0.5 }}>delete</Icon>
-                                  Delete
-                                </MDButton>
-                              </MDBox>
-                            </MDBox>
-                          </Card>
-                        </Grid>
-                      );
-                    })}
-                  </Grid>
-                )}
-              </MDBox>
-            </Card>
-          </Grid>
         </Grid>
       </MDBox>
+      {/* Previous Validations */}
+      <Grid item xs={12}>
+        <Card>
+          <MDBox p={3}>
+            <MDTypography variant="h5" fontWeight="medium" mb={3}>
+              Previous Validations
+            </MDTypography>
+
+            {loading ? (
+              <MDTypography variant="body2" color="text">
+                Loading...
+              </MDTypography>
+            ) : items.length === 0 ? (
+              <MDTypography variant="body2" color="text">
+                No validations found.
+              </MDTypography>
+            ) : (
+              <Grid container spacing={2}>
+                {items.map((r) => {
+                  const id = r._id || r.id;
+                  return (
+                    <Grid item xs={12} key={id}>
+                      <Card variant="outlined">
+                        <MDBox p={3}>
+                          <MDTypography variant="h6" fontWeight="medium" mb={1}>
+                            {r.title}
+                          </MDTypography>
+                          <MDTypography
+                            variant="caption"
+                            color="text"
+                            mb={2}
+                            display="block"
+                          >
+                            {r.report_type || "validation"} ·{" "}
+                            {r.created_at
+                              ? new Date(r.created_at).toLocaleString()
+                              : ""}
+                          </MDTypography>
+
+                          <MDBox mb={2}>
+                            <MDTypography variant="body2" component="div">
+                              <strong>Tools:</strong>{" "}
+                              {r.results?.summary?.total_tools || 0} ·{" "}
+                              <strong>Matched:</strong>{" "}
+                              {r.results?.summary?.matched || 0}
+                            </MDTypography>
+                          </MDBox>
+
+                          <MDBox display="flex" gap={2}>
+                            <MDButton
+                              component={Link}
+                              to={`/validate/${id}`}
+                              variant="gradient"
+                              color="info"
+                              size="small"
+                            >
+                              <Icon sx={{ mr: 0.5 }}>visibility</Icon>
+                              Open Details
+                            </MDButton>
+                            <MDButton
+                              variant="gradient"
+                              color="error"
+                              size="small"
+                              onClick={() => remove(id)}
+                            >
+                              <Icon sx={{ mr: 0.5 }}>delete</Icon>
+                              Delete
+                            </MDButton>
+                          </MDBox>
+                        </MDBox>
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            )}
+          </MDBox>
+        </Card>
+      </Grid>
 
       {/* Toast Notification */}
       <Snackbar
@@ -449,8 +508,16 @@ export default function Validate() {
           <DialogContentText>This action cannot be undone.</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialog({ open: false, onConfirm: null })}>Cancel</Button>
-          <Button onClick={confirmDialog.onConfirm} color="error" variant="contained">
+          <Button
+            onClick={() => setConfirmDialog({ open: false, onConfirm: null })}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDialog.onConfirm}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>

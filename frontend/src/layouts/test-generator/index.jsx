@@ -38,7 +38,11 @@ export default function TestGenerator() {
   const logsRef = useRef(null);
 
   // Toast state
-  const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   // Auto-scroll logs
   useEffect(() => {
@@ -49,7 +53,8 @@ export default function TestGenerator() {
 
   // Socket.io setup
   const socket = useMemo(() => {
-    const url = process.env.VITE_SOCKET_URL || apiBase || "http://localhost:8080";
+    const url =
+      process.env.VITE_SOCKET_URL || apiBase || "http://localhost:8080";
     console.log("🔌 Connecting to socket:", url);
     return io(url, {
       transports: ["websocket"],
@@ -80,10 +85,15 @@ export default function TestGenerator() {
       console.log("✅ log_done received:", msg);
       setLoading(false);
       setProgress(100);
-      setToast({ open: true, message: "Test generation completed!", severity: "success" });
+      setToast({
+        open: true,
+        message: "Test generation completed!",
+        severity: "success",
+      });
       setLogs((prev) => prev + "\n✅ " + (msg.message || "Done") + "\n");
       if (msg.zip_url) {
-        const baseUrl = process.env.VITE_API_URL || apiBase || "http://localhost:8080";
+        const baseUrl =
+          process.env.VITE_API_URL || apiBase || "http://localhost:8080";
         const fullUrl = msg.zip_url.startsWith("http")
           ? msg.zip_url
           : `${baseUrl}${msg.zip_url.startsWith("/") ? "" : "/"}${msg.zip_url}`;
@@ -100,7 +110,11 @@ export default function TestGenerator() {
       if (isStopped) return;
       console.error("❌ Log error:", msg);
       setLogs((prev) => prev + "\n❌ " + msg.error + "\n");
-      setToast({ open: true, message: msg.error || "Test generation failed", severity: "error" });
+      setToast({
+        open: true,
+        message: msg.error || "Test generation failed",
+        severity: "error",
+      });
       setLoading(false);
       setProgress(0);
     });
@@ -114,11 +128,19 @@ export default function TestGenerator() {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) {
-      setToast({ open: true, message: "Please select a .zip file", severity: "error" });
+      setToast({
+        open: true,
+        message: "Please select a .zip file",
+        severity: "error",
+      });
       return;
     }
     if (!accessToken) {
-      setToast({ open: true, message: "You must be logged in", severity: "error" });
+      setToast({
+        open: true,
+        message: "You must be logged in",
+        severity: "error",
+      });
       return;
     }
 
@@ -172,7 +194,11 @@ export default function TestGenerator() {
     };
 
     xhr.onerror = () => {
-      setToast({ open: true, message: "Upload failed (network error)", severity: "error" });
+      setToast({
+        open: true,
+        message: "Upload failed (network error)",
+        severity: "error",
+      });
       setLoading(false);
       setProgress(0);
     };
@@ -186,7 +212,11 @@ export default function TestGenerator() {
     setLoading(false);
     setProgress(0);
     setLogs((prev) => prev + "\n🛑 Generation stopped by user.\n");
-    setToast({ open: true, message: "Test generation stopped", severity: "warning" });
+    setToast({
+      open: true,
+      message: "Test generation stopped",
+      severity: "warning",
+    });
 
     // Send stop signal to backend
     try {
@@ -203,7 +233,7 @@ export default function TestGenerator() {
         <Grid container spacing={3}>
           {/* Header */}
           <Grid item xs={12}>
-            <MDTypography variant="h4" fontWeight="medium" textAlign="center">
+            <MDTypography variant="h4" fontWeight="medium">
               <Icon sx={{ verticalAlign: "middle", mr: 1 }}>psychology</Icon>
               Automated Test Generator
             </MDTypography>
@@ -214,36 +244,41 @@ export default function TestGenerator() {
             <Card>
               <MDBox p={3}>
                 <Box component="form" onSubmit={handleUpload}>
-                  <MDTypography variant="h5" fontWeight="medium" mb={3}>
-                    Upload Tools ZIP
-                  </MDTypography>
+                  <Grid xs={12} lg={6}>
+                    <MDTypography variant="h5" fontWeight="medium" mb={3}>
+                      Upload Tools ZIP
+                    </MDTypography>
 
-                  {/* File Upload */}
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    fullWidth
-                    sx={{ mb: 3, justifyContent: "flex-start" }}
-                  >
-                    <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                    {file ? file.name : "Choose ZIP File"}
-                    <input
-                      type="file"
-                      hidden
-                      accept=".zip"
-                      onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    />
-                  </Button>
+                    {/* File Upload */}
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      fullWidth
+                      sx={{ mb: 3, justifyContent: "flex-start" }}
+                    >
+                      <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                      {file ? file.name : "Choose ZIP File"}
+                      <input
+                        type="file"
+                        hidden
+                        accept=".zip"
+                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      />
+                    </Button>
 
-                  {/* Progress Bar */}
-                  {loading && (
-                    <MDBox mb={3}>
-                      <LinearProgress variant="determinate" value={progress} />
-                      <MDTypography variant="caption" color="text" mt={1}>
-                        Processing: {progress}%
-                      </MDTypography>
-                    </MDBox>
-                  )}
+                    {/* Progress Bar */}
+                    {loading && (
+                      <MDBox mb={3}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={progress}
+                        />
+                        <MDTypography variant="caption" color="text" mt={1}>
+                          Processing: {progress}%
+                        </MDTypography>
+                      </MDBox>
+                    )}
+                  </Grid>
 
                   {/* Action Buttons */}
                   <Grid container spacing={2}>
@@ -251,17 +286,22 @@ export default function TestGenerator() {
                       <MDButton
                         variant="gradient"
                         color="info"
-                        fullWidth
                         type="submit"
                         disabled={loading}
                       >
                         <Icon sx={{ mr: 0.5 }}>play_arrow</Icon>
-                        {loading ? `Processing (${progress}%)...` : "Generate Tests"}
+                        {loading
+                          ? `Processing (${progress}%)...`
+                          : "Generate Tests"}
                       </MDButton>
                     </Grid>
                     {loading && (
                       <Grid item xs={4}>
-                        <MDButton variant="gradient" color="error" fullWidth onClick={handleStop}>
+                        <MDButton
+                          variant="gradient"
+                          color="error"
+                          onClick={handleStop}
+                        >
                           <Icon sx={{ mr: 0.5 }}>stop</Icon>
                           Stop
                         </MDButton>
@@ -271,7 +311,12 @@ export default function TestGenerator() {
                 </Box>
 
                 {/* Socket Status */}
-                <MDBox mt={3} pt={3} borderTop="1px solid" borderColor="grey.300">
+                <MDBox
+                  mt={3}
+                  pt={3}
+                  borderTop="1px solid"
+                  borderColor="grey.300"
+                >
                   <MDBox display="flex" alignItems="center" gap={1} mb={2}>
                     <MDTypography variant="body2" color="text">
                       Socket Status:
@@ -300,7 +345,9 @@ export default function TestGenerator() {
                       wordBreak: "break-word",
                     }}
                     dangerouslySetInnerHTML={{
-                      __html: logs || "<em style='color: #888;'>Awaiting logs...</em>",
+                      __html:
+                        logs ||
+                        "<em style='color: #888;'>Awaiting logs...</em>",
                     }}
                   />
 

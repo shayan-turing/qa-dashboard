@@ -48,14 +48,6 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Rule Validate",
-    key: "rule-validate",
-    icon: <Icon fontSize="small">rule</Icon>,
-    route: "/rule-validate",
-    component: <RuleValidate />,
-  },
-  {
-    type: "collapse",
     name: "Tasks",
     key: "tasks",
     icon: <Icon fontSize="small">task_alt</Icon>,

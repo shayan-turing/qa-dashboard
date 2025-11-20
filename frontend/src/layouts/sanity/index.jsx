@@ -53,7 +53,7 @@ export default function Sanity() {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      if (file.name.endsWith('.zip')) {
+      if (file.name.endsWith(".zip")) {
         setSelectedFile(file);
         setToast({
           open: true,
@@ -73,7 +73,7 @@ export default function Sanity() {
 
   const handleRunSanityCheck = async (e) => {
     e.preventDefault();
-    
+
     // Check if file is selected
     if (!selectedFile) {
       setToast({
@@ -89,9 +89,9 @@ export default function Sanity() {
 
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append("file", selectedFile);
       if (title) {
-        formData.append('title', title);
+        formData.append("title", title);
       }
 
       const res = await apiFetch("/sanity/run-upload", {
@@ -100,7 +100,7 @@ export default function Sanity() {
       });
 
       const data = await res.json();
-      
+
       if (res.ok) {
         setUploadResp(data);
         setToast({
@@ -152,31 +152,15 @@ export default function Sanity() {
         <Grid container spacing={3}>
           {/* Header */}
           <Grid item xs={12}>
-            <MDBox display="flex" justifyContent="space-between" alignItems="center">
+            <MDBox
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
               <MDTypography variant="h4" fontWeight="medium">
                 <Icon sx={{ verticalAlign: "middle", mr: 1 }}>storage</Icon>
                 DB Sanity
               </MDTypography>
-              <MDBox display="flex" gap={2}>
-                <MDButton
-                  variant="gradient"
-                  color="info"
-                  size="small"
-                  onClick={() => navigate("/sanity/summary")}
-                >
-                  <Icon sx={{ mr: 0.5 }}>bar_chart</Icon>
-                  View Summary
-                </MDButton>
-                <MDButton
-                  variant="gradient"
-                  color="dark"
-                  size="small"
-                  onClick={() => navigate("/sanity/report")}
-                >
-                  <Icon sx={{ mr: 0.5 }}>description</Icon>
-                  View Reports
-                </MDButton>
-              </MDBox>
             </MDBox>
           </Grid>
 
@@ -188,34 +172,37 @@ export default function Sanity() {
                   <MDTypography variant="h5" fontWeight="medium" mb={3}>
                     Run Sanity Check
                   </MDTypography>
-
-                  {/* Title Input */}
-                  <TextField
-                    fullWidth
-                    label="Report Title"
-                    variant="outlined"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    sx={{ mb: 3 }}
-                  />
-
-                  {/* File Upload */}
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    fullWidth
-                    sx={{ mb: 3, justifyContent: "flex-start" }}
-                  >
-                    <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                    {selectedFile ? selectedFile.name : "Choose ZIP File"}
-                    <input
-                      type="file"
-                      hidden
-                      accept=".zip"
-                      onChange={handleFileChange}
-                    />
-                  </Button>
-
+                  <Grid container spacing={2}>
+                    <Grid  item xs={12} lg={6}>
+                      {/* Title Input */}
+                      <TextField
+                        fullWidth
+                        label="Report Title"
+                        variant="outlined"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        sx={{ mb: 3 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} lg={6}>
+                      {/* File Upload */}
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        fullWidth
+                        sx={{ mb: 3, justifyContent: "flex-start" }}
+                      >
+                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                        {selectedFile ? selectedFile.name : "Choose ZIP File"}
+                        <input
+                          type="file"
+                          hidden
+                          accept=".zip"
+                          onChange={handleFileChange}
+                        />
+                      </Button>
+                    </Grid>
+                  </Grid>
                   {/* Progress Bar */}
                   {isUploading && (
                     <MDBox mb={3}>
@@ -230,7 +217,6 @@ export default function Sanity() {
                   <MDButton
                     variant="gradient"
                     color="info"
-                    fullWidth
                     type="submit"
                     disabled={isUploading}
                   >
@@ -247,87 +233,123 @@ export default function Sanity() {
             <Grid item xs={12}>
               <Card>
                 <MDBox p={3}>
-                  <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                  <MDBox
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    mb={3}
+                  >
                     <MDTypography variant="h5" fontWeight="medium">
                       Upload Results
                     </MDTypography>
                     <Chip
-                      label={`Report Type: ${uploadResp.report_type || 'N/A'}`}
+                      label={`Report Type: ${uploadResp.report_type || "N/A"}`}
                       color="info"
                       size="small"
                     />
                   </MDBox>
 
                   {/* Summary Cards */}
-                  {uploadResp.results?.enum_tables && Object.keys(uploadResp.results.enum_tables).length > 0 && (
-                    <Grid container spacing={2} mb={3}>
-                      {Object.entries(uploadResp.results.enum_tables).map(([tableName, tableData]) => (
-                        <Grid item xs={12} md={4} key={tableName}>
-                          <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
-                            <MDBox p={2} textAlign="center">
-                              <MDTypography variant="h6" fontWeight="medium">
-                                {tableName}
-                              </MDTypography>
-                              <MDTypography variant="body2" color="text">
-                                {tableData.audit_trails?.length || 0} checks
-                              </MDTypography>
-                            </MDBox>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  )}
+                  {uploadResp.results?.enum_tables &&
+                    Object.keys(uploadResp.results.enum_tables).length > 0 && (
+                      <Grid container spacing={2} mb={3}>
+                        {Object.entries(uploadResp.results.enum_tables).map(
+                          ([tableName, tableData]) => (
+                            <Grid item xs={12} md={4} key={tableName}>
+                              <Card
+                                variant="outlined"
+                                sx={{ backgroundColor: "action.hover" }}
+                              >
+                                <MDBox p={2} textAlign="center">
+                                  <MDTypography
+                                    variant="h6"
+                                    fontWeight="medium"
+                                  >
+                                    {tableName}
+                                  </MDTypography>
+                                  <MDTypography variant="body2" color="text">
+                                    {tableData.audit_trails?.length || 0} checks
+                                  </MDTypography>
+                                </MDBox>
+                              </Card>
+                            </Grid>
+                          )
+                        )}
+                      </Grid>
+                    )}
 
                   {/* Results Table */}
                   {uploadResp.results?.enum_tables && (
                     <TableContainer>
                       <Table>
-                        <TableHead sx={{ backgroundColor: 'action.hover' }}>
+                        <TableHead sx={{ backgroundColor: "action.hover" }}>
                           <TableRow>
                             <TableCell>
-                              <MDTypography variant="caption" fontWeight="bold">Table</MDTypography>
+                              <MDTypography variant="caption" fontWeight="bold">
+                                Table
+                              </MDTypography>
                             </TableCell>
                             <TableCell>
-                              <MDTypography variant="caption" fontWeight="bold">Check</MDTypography>
+                              <MDTypography variant="caption" fontWeight="bold">
+                                Check
+                              </MDTypography>
                             </TableCell>
                             <TableCell>
-                              <MDTypography variant="caption" fontWeight="bold">Result</MDTypography>
+                              <MDTypography variant="caption" fontWeight="bold">
+                                Result
+                              </MDTypography>
                             </TableCell>
                             <TableCell>
-                              <MDTypography variant="caption" fontWeight="bold">Details</MDTypography>
+                              <MDTypography variant="caption" fontWeight="bold">
+                                Details
+                              </MDTypography>
                             </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {Object.entries(uploadResp.results.enum_tables).map(([tableName, tableData]) => (
-                            tableData.audit_trails?.map((check, idx) => (
-                              <TableRow key={`${tableName}-${idx}`} hover>
-                                <TableCell>
-                                  <Chip label={check.table || tableName} size="small" variant="outlined" />
-                                </TableCell>
-                                <TableCell>
-                                  <MDTypography variant="body2" color="text">
-                                    {check.check}
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell>
-                                  <Chip
-                                    icon={<Icon fontSize="small">{check.result ? 'check_circle' : 'cancel'}</Icon>}
-                                    label={check.result ? 'PASS' : 'FAIL'}
-                                    color={check.result ? 'success' : 'error'}
-                                    size="small"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <MDTypography variant="caption" color="text">
-                                    {check.details && check.details.length > 0 
-                                      ? JSON.stringify(check.details) 
-                                      : '—'}
-                                  </MDTypography>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ))}
+                          {Object.entries(uploadResp.results.enum_tables).map(
+                            ([tableName, tableData]) =>
+                              tableData.audit_trails?.map((check, idx) => (
+                                <TableRow key={`${tableName}-${idx}`} hover>
+                                  <TableCell>
+                                    <Chip
+                                      label={check.table || tableName}
+                                      size="small"
+                                      variant="outlined"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <MDTypography variant="body2" color="text">
+                                      {check.check}
+                                    </MDTypography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      icon={
+                                        <Icon fontSize="small">
+                                          {check.result
+                                            ? "check_circle"
+                                            : "cancel"}
+                                        </Icon>
+                                      }
+                                      label={check.result ? "PASS" : "FAIL"}
+                                      color={check.result ? "success" : "error"}
+                                      size="small"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <MDTypography
+                                      variant="caption"
+                                      color="text"
+                                    >
+                                      {check.details && check.details.length > 0
+                                        ? JSON.stringify(check.details)
+                                        : "—"}
+                                    </MDTypography>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                          )}
                         </TableBody>
                       </Table>
                     </TableContainer>
