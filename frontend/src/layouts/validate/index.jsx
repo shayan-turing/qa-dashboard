@@ -24,6 +24,8 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import OutlinedInput from "@mui/material/OutlinedInput";
+import Autocomplete from "@mui/material/Autocomplete";
+import FormHelperText from "@mui/material/FormHelperText";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -94,7 +96,7 @@ export default function Validate() {
 
   useEffect(() => {
     loadReports();
-  }, []);
+  }, [loadReports]);
 
   // Load Excel sheet names and columns
   const handleExcelUpload = async (e) => {
@@ -112,6 +114,7 @@ export default function Validate() {
         const first = Object.keys(res.json.sheets)[0];
         setSelectedSheet(first);
         setColumns(res.json.sheets[first]);
+        setSelectedCols([]);
         setToast({
           open: true,
           message: "Excel loaded successfully",
@@ -270,64 +273,6 @@ export default function Validate() {
                       </Button>
                     </Grid>
 
-                    {/* Sheet Selection */}
-                    {Object.keys(sheets).length > 0 && (
-                      <Grid item xs={12} lg={6}>
-                        <FormControl fullWidth>
-                          <InputLabel>Select Sheet</InputLabel>
-                          <Select
-                            value={selectedSheet}
-                            label="Select Sheet"
-                            onChange={(e) => handleSheetChange(e.target.value)}
-                          >
-                            {Object.keys(sheets).map((s) => (
-                              <MenuItem key={s} value={s}>
-                                {s}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    )}
-
-                    {/* Columns Selection */}
-                    {columns.length > 0 && (
-                      <Grid item xs={12}>
-                        <FormControl fullWidth>
-                          <InputLabel>Select Column(s)</InputLabel>
-                          <Select
-                            multiple
-                            value={selectedCols}
-                            onChange={(e) => setSelectedCols(e.target.value)}
-                            input={<OutlinedInput label="Select Column(s)" />}
-                            renderValue={(selected) => (
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 0.5,
-                                }}
-                              >
-                                {selected.map((value) => (
-                                  <Chip
-                                    key={value}
-                                    label={value}
-                                    size="small"
-                                  />
-                                ))}
-                              </Box>
-                            )}
-                          >
-                            {columns.map((col) => (
-                              <MenuItem key={col} value={col}>
-                                {col}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    )}
-
                     {/* Document Upload */}
                     <Grid item xs={12} lg={6}>
                       <MDTypography variant="body2" fontWeight="medium" mb={1}>
@@ -350,6 +295,88 @@ export default function Validate() {
                         />
                       </Button>
                     </Grid>
+
+                    {/* Excel Mapping: Sheet + Columns */}
+                    {Object.keys(sheets).length > 0 && (
+                      <Grid item xs={12}>
+                        <MDBox
+                          borderRadius={2}
+                          border="1px solid"
+                          borderColor="divider"
+                          p={2.5}
+                          mt={1}
+                        >
+                          <MDTypography
+                            variant="subtitle2"
+                            fontWeight="medium"
+                            mb={1}
+                          >
+                            Excel Mapping
+                          </MDTypography>
+
+                          <Grid container spacing={2}>
+                            {/* Sheet Selection */}
+                            <Grid item xs={12} md={6}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel>Select Sheet</InputLabel>
+                                <Select
+                                  value={selectedSheet}
+                                  sx={{ height: 40 }}
+                                  label="Select Sheet"
+                                  onChange={(e) =>
+                                    handleSheetChange(e.target.value)
+                                  }
+                                >
+                                  {Object.keys(sheets).map((s) => (
+                                    <MenuItem key={s} value={s}>
+                                      {s}
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+                                <FormHelperText>
+                                  Choose the worksheet to validate.
+                                </FormHelperText>
+                              </FormControl>
+                            </Grid>
+
+                            {/* Columns Selection */}
+                            <Grid item xs={12} md={6}>
+                              <Autocomplete
+                                multiple
+                                size="small"
+                                options={columns}
+                                value={selectedCols}
+                                sx={{ height: 45 }}
+                                onChange={(_, value) => setSelectedCols(value)}
+                                disableCloseOnSelect
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    label="Select Column(s)"
+                                    placeholder="Search or pick columns"
+                                  />
+                                )}
+                                renderTags={(value, getTagProps) =>
+                                  value.map((option, index) => (
+                                    <Chip
+                                      {...getTagProps({ index })}
+                                      key={option}
+                                      label={option}
+                                      size="small"
+                                    />
+                                  ))
+                                }
+                                fullWidth
+                              />
+                              <FormHelperText>
+                                Select one or more columns to run the validation
+                                on.
+                              </FormHelperText>
+                            </Grid>
+                          </Grid>
+                        </MDBox>
+                      </Grid>
+                    )}
 
                     {/* Threshold + LLM Settings */}
                     <Grid item xs={12} lg={6}>
@@ -402,6 +429,7 @@ export default function Validate() {
           </Grid>
         </Grid>
       </MDBox>
+
       {/* Previous Validations */}
       <Grid item xs={12}>
         <Card>
@@ -522,6 +550,7 @@ export default function Validate() {
           </Button>
         </DialogActions>
       </Dialog>
+      <Footer />
     </DashboardLayout>
   );
 }
