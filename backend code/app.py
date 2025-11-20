@@ -68,6 +68,8 @@ app = Flask(__name__)
 app.secret_key = JWT_SECRET  # Required for Flask sessions
 CORS(app, supports_credentials=True)
 app.config["JWT_SECRET_KEY"] = JWT_SECRET
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(hours=1)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = datetime.timedelta(days=30)
 jwt = JWTManager(app)
 
 # Register API sanity check blueprint
