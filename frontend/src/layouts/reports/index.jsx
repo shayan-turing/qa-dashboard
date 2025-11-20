@@ -202,69 +202,83 @@ export default function Reports() {
                   Create New Report
                 </MDTypography>
                 <Box component="form" onSubmit={handleUpload}>
-                  <Grid xs={12} lg={6}>
-                    <TextField
-                      fullWidth
-                      label="Title (optional)"
-                      variant="outlined"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      sx={{ mb: 2 }}
-                    />
-                  </Grid>
-                  <Grid xs={12} lg={6}>
-                    <TextField
-                      fullWidth
-                      label="Tags (comma separated)"
-                      variant="outlined"
-                      value={tags}
-                      onChange={(e) => setTags(e.target.value)}
-                      sx={{ mb: 2 }}
-                    />
-                  </Grid>
-                  <Grid xs={12} lg={6}>
-                    <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                      Upload Document 1
-                    </MDTypography>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      fullWidth
-                      sx={{ mb: 2, justifyContent: "flex-start" }}
-                    >
-                      <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                      {file1 ? file1.name : "Choose File"}
-                      <input
-                        id="file1-input"
-                        type="file"
-                        hidden
-                        accept=".txt,.docx,.pdf,.md"
-                        onChange={(e) => setFile1(e.target.files?.[0] || null)}
+                  <Grid container spacing={2}>
+                    {/* Title */}
+                    <Grid item xs={12} lg={6}>
+                      <TextField
+                        fullWidth
+                        label="Title (optional)"
+                        variant="outlined"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        sx={{ mb: 2 }}
                       />
-                    </Button>
-                  </Grid>
-                  <Grid xs={12} lg={6}>
-                    <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                      Upload Document 2
-                    </MDTypography>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      fullWidth
-                      sx={{ mb: 2, justifyContent: "flex-start" }}
-                    >
-                      <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                      {file2 ? file2.name : "Choose File"}
-                      <input
-                        id="file2-input"
-                        type="file"
-                        hidden
-                        accept=".txt,.docx,.pdf,.md"
-                        onChange={(e) => setFile2(e.target.files?.[0] || null)}
+                    </Grid>
+
+                    {/* Tags */}
+                    <Grid item xs={12} lg={6}>
+                      <TextField
+                        fullWidth
+                        label="Tags (comma separated)"
+                        variant="outlined"
+                        value={tags}
+                        onChange={(e) => setTags(e.target.value)}
+                        sx={{ mb: 2 }}
                       />
-                    </Button>
+                    </Grid>
+
+                    {/* Upload 1 */}
+                    <Grid item xs={12} lg={6}>
+                      <MDTypography variant="body2" fontWeight="medium" mb={1}>
+                        Upload Document 1
+                      </MDTypography>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        fullWidth
+                        sx={{ mb: 2, justifyContent: "flex-start" }}
+                      >
+                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                        {file1 ? file1.name : "Choose File"}
+                        <input
+                          id="file1-input"
+                          type="file"
+                          hidden
+                          accept=".txt,.docx,.pdf,.md"
+                          onChange={(e) =>
+                            setFile1(e.target.files?.[0] || null)
+                          }
+                        />
+                      </Button>
+                    </Grid>
+
+                    {/* Upload 2 */}
+                    <Grid item xs={12} lg={6}>
+                      <MDTypography variant="body2" fontWeight="medium" mb={1}>
+                        Upload Document 2
+                      </MDTypography>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        fullWidth
+                        sx={{ mb: 2, justifyContent: "flex-start" }}
+                      >
+                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                        {file2 ? file2.name : "Choose File"}
+                        <input
+                          id="file2-input"
+                          type="file"
+                          hidden
+                          accept=".txt,.docx,.pdf,.md"
+                          onChange={(e) =>
+                            setFile2(e.target.files?.[0] || null)
+                          }
+                        />
+                      </Button>
+                    </Grid>
                   </Grid>
 
+                  {/* Progress */}
                   {progress > 0 && progress < 100 && (
                     <MDBox mb={2}>
                       <LinearProgress variant="determinate" value={progress} />
@@ -277,7 +291,6 @@ export default function Reports() {
                   <MDButton
                     variant="gradient"
                     color="info"
-                    fullWidth
                     type="submit"
                     disabled={isUploading}
                   >

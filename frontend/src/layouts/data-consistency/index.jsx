@@ -39,7 +39,7 @@ export default function DataConsistencyChecker() {
   const [isUploading, setIsUploading] = useState(false);
   const [fileFields, setFileFields] = useState(null);
   const [selectedFilename, setSelectedFilename] = useState("");
-  
+
   // Detect inconsistencies state
   const [file1, setFile1] = useState("");
   const [file2, setFile2] = useState("");
@@ -54,7 +54,11 @@ export default function DataConsistencyChecker() {
   const [parsedSchema, setParsedSchema] = useState(null);
 
   // Toast state
-  const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   const handleFileChange = (event) => {
     const files = Array.from(event.target.files);
@@ -82,8 +86,8 @@ export default function DataConsistencyChecker() {
 
     try {
       const formData = new FormData();
-      selectedFiles.forEach(file => {
-        formData.append('files', file);
+      selectedFiles.forEach((file) => {
+        formData.append("files", file);
       });
 
       const res = await apiFetch("/data_sanity_checker/upload", {
@@ -94,7 +98,9 @@ export default function DataConsistencyChecker() {
       const data = await res.json();
 
       if (res.ok) {
-        setUploadedFiles(data.uploaded_files || selectedFiles.map(f => f.name));
+        setUploadedFiles(
+          data.uploaded_files || selectedFiles.map((f) => f.name)
+        );
         setToast({
           open: true,
           message: "Files uploaded successfully",
@@ -129,7 +135,9 @@ export default function DataConsistencyChecker() {
     }
 
     try {
-      const res = await apiFetch(`/data_sanity_checker/get-fields/${selectedFilename}`);
+      const res = await apiFetch(
+        `/data_sanity_checker/get-fields/${selectedFilename}`
+      );
       const data = await res.json();
 
       if (res.ok) {
@@ -318,20 +326,15 @@ export default function DataConsistencyChecker() {
         <Grid container spacing={3}>
           {/* Header */}
           <Grid item xs={12}>
-            <MDBox display="flex" justifyContent="space-between" alignItems="center">
+            <MDBox
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
               <MDTypography variant="h4" fontWeight="medium">
                 <Icon sx={{ verticalAlign: "middle", mr: 1 }}>fact_check</Icon>
                 Data Consistency Checker
               </MDTypography>
-              <MDButton
-                variant="gradient"
-                color="warning"
-                size="small"
-                onClick={handleClearSession}
-              >
-                <Icon sx={{ mr: 0.5 }}>clear</Icon>
-                Clear Session
-              </MDButton>
             </MDBox>
           </Grid>
 
@@ -339,10 +342,25 @@ export default function DataConsistencyChecker() {
           <Grid item xs={12}>
             <Card>
               <MDBox p={3}>
-                <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-                  <Tab label="Upload Files" icon={<Icon>upload</Icon>} iconPosition="start" />
-                  <Tab label="Detect Issues" icon={<Icon>search</Icon>} iconPosition="start" />
-                  <Tab label="Parse Schema" icon={<Icon>schema</Icon>} iconPosition="start" />
+                <Tabs
+                  value={activeTab}
+                  onChange={(e, newValue) => setActiveTab(newValue)}
+                >
+                  <Tab
+                    label="Upload Files"
+                    icon={<Icon>upload</Icon>}
+                    iconPosition="start"
+                  />
+                  <Tab
+                    label="Detect Issues"
+                    icon={<Icon>search</Icon>}
+                    iconPosition="start"
+                  />
+                  <Tab
+                    label="Parse Schema"
+                    icon={<Icon>schema</Icon>}
+                    iconPosition="start"
+                  />
                 </Tabs>
               </MDBox>
             </Card>
@@ -355,28 +373,30 @@ export default function DataConsistencyChecker() {
                 <Card>
                   <MDBox p={3}>
                     <Box component="form" onSubmit={handleUploadFiles}>
-                      <MDTypography variant="h5" fontWeight="medium" mb={3}>
-                        Upload JSON Files
-                      </MDTypography>
+                      <Grid xs={12} lg={6}>
+                        <MDTypography variant="h5" fontWeight="medium" mb={3}>
+                          Upload JSON Files
+                        </MDTypography>
 
-                      <Button
-                        variant="outlined"
-                        component="label"
-                        fullWidth
-                        sx={{ mb: 3, justifyContent: "flex-start" }}
-                      >
-                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                        {selectedFiles.length > 0
-                          ? `${selectedFiles.length} file(s) selected`
-                          : "Choose JSON Files"}
-                        <input
-                          type="file"
-                          hidden
-                          accept=".json"
-                          multiple
-                          onChange={handleFileChange}
-                        />
-                      </Button>
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          fullWidth
+                          sx={{ mb: 3, justifyContent: "flex-start" }}
+                        >
+                          <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                          {selectedFiles.length > 0
+                            ? `${selectedFiles.length} file(s) selected`
+                            : "Choose JSON Files"}
+                          <input
+                            type="file"
+                            hidden
+                            accept=".json"
+                            multiple
+                            onChange={handleFileChange}
+                          />
+                        </Button>
+                      </Grid>
 
                       {isUploading && (
                         <MDBox mb={3}>
@@ -387,7 +407,6 @@ export default function DataConsistencyChecker() {
                       <MDButton
                         variant="gradient"
                         color="info"
-                        fullWidth
                         type="submit"
                         disabled={isUploading}
                       >
@@ -403,7 +422,12 @@ export default function DataConsistencyChecker() {
                         </MDTypography>
                         <MDBox display="flex" flexWrap="wrap" gap={1}>
                           {uploadedFiles.map((filename, idx) => (
-                            <Chip key={idx} label={filename} color="success" size="small" />
+                            <Chip
+                              key={idx}
+                              label={filename}
+                              color="success"
+                              size="small"
+                            />
                           ))}
                         </MDBox>
                       </MDBox>
@@ -426,7 +450,10 @@ export default function DataConsistencyChecker() {
                           <Select
                             value={selectedFilename}
                             label="Select File"
-                            onChange={(e) => setSelectedFilename(e.target.value)}
+                            onChange={(e) =>
+                              setSelectedFilename(e.target.value)
+                            }
+                            sx={{ height: 45 }}
                           >
                             {uploadedFiles.map((filename, idx) => (
                               <MenuItem key={idx} value={filename}>
@@ -439,8 +466,7 @@ export default function DataConsistencyChecker() {
                       <Grid item xs={12} md={4}>
                         <MDButton
                           variant="gradient"
-                          color="dark"
-                          fullWidth
+                          color="info"
                           onClick={handleGetFields}
                           sx={{ height: "100%" }}
                         >
@@ -479,7 +505,10 @@ export default function DataConsistencyChecker() {
               <Grid item xs={12}>
                 <Card>
                   <MDBox p={3}>
-                    <Box component="form" onSubmit={handleDetectInconsistencies}>
+                    <Box
+                      component="form"
+                      onSubmit={handleDetectInconsistencies}
+                    >
                       <MDTypography variant="h5" fontWeight="medium" mb={3}>
                         Detect Inconsistencies
                       </MDTypography>
@@ -492,6 +521,7 @@ export default function DataConsistencyChecker() {
                               value={file1}
                               label="File 1"
                               onChange={(e) => setFile1(e.target.value)}
+                              sx={{ height: 45 }}
                             >
                               {uploadedFiles.map((filename, idx) => (
                                 <MenuItem key={idx} value={filename}>
@@ -508,6 +538,7 @@ export default function DataConsistencyChecker() {
                               value={file2}
                               label="File 2"
                               onChange={(e) => setFile2(e.target.value)}
+                              sx={{ height: 45 }}
                             >
                               {uploadedFiles.map((filename, idx) => (
                                 <MenuItem key={idx} value={filename}>
@@ -535,13 +566,14 @@ export default function DataConsistencyChecker() {
                             sx={{ mb: 2 }}
                           />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid item xs={12} lg={6}>
                           <FormControl fullWidth sx={{ mb: 2 }}>
                             <InputLabel>Source of Truth</InputLabel>
                             <Select
                               value={sourceOfTruth}
                               label="Source of Truth"
                               onChange={(e) => setSourceOfTruth(e.target.value)}
+                              sx={{ height: 45 }}
                             >
                               {uploadedFiles.map((filename, idx) => (
                                 <MenuItem key={idx} value={filename}>
@@ -562,7 +594,6 @@ export default function DataConsistencyChecker() {
                       <MDButton
                         variant="gradient"
                         color="info"
-                        fullWidth
                         type="submit"
                         disabled={isDetecting}
                       >
@@ -629,7 +660,11 @@ export default function DataConsistencyChecker() {
                       sx={{ mb: 3 }}
                     />
 
-                    <MDButton variant="gradient" color="info" fullWidth type="submit">
+                    <MDButton
+                      variant="gradient"
+                      color="info"
+                      type="submit"
+                    >
                       <Icon sx={{ mr: 0.5 }}>schema</Icon>
                       Parse Schema
                     </MDButton>
@@ -681,4 +716,3 @@ export default function DataConsistencyChecker() {
     </DashboardLayout>
   );
 }
-
