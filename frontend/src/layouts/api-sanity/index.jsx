@@ -137,7 +137,7 @@ export default function ApiSanityChecker() {
 
   const loadLastReport = async () => {
     try {
-      const res = await apiFetch("/api_sanity_check/last");
+      const res = await apiFetch("/api_sanity_check/reports");
       const data = await res.json();
       if (res.ok && data) {
         setReportData(data);

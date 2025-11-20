@@ -11,6 +11,7 @@ import SanitySummary from "layouts/sanity/summary";
 import TestGenerator from "layouts/test-generator";
 import TestReports from "layouts/test-reports";
 
+
 // @mui icons
 import Icon from "@mui/material/Icon";
 import ValidateDetails from "layouts/validate/details";
@@ -88,14 +89,14 @@ const routes = [
     component: <ApiSanityChecker />,
   },
 
-  {
-    type: "collapse",
-    name: "Data consistency",
-    key: "data-consistency",
-    icon: <Icon fontSize="small">fact_check</Icon>,
-    route: "/data-consistency",
-    component: <DataConsistencyChecker />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Data consistency",
+  //   key: "data-consistency",
+  //   icon: <Icon fontSize="small">fact_check</Icon>,
+  //   route: "/data-consistency",
+  //   component: <DataConsistencyChecker />,
+  // },
 
   {
     type: "hidden",
@@ -133,12 +134,12 @@ const routes = [
     component: <SanityReport />,
     key: "sanity-report",
   },
-  // {
-  //   type: "hidden",
-  //   route: "/sanity/summary",
-  //   component: <SanitySummary />,
-  //   key: "sanity-summary",
-  // },
+  {
+    type: "hidden",
+    route: "/sanity/summary",
+    component: <SanitySummary />,
+    key: "sanity-summary",
+  },
 ];
 
 export default routes;
