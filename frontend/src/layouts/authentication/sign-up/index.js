@@ -23,15 +23,18 @@ function Singup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
+  const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const togglePassword = () => setShowPassword((prev) => !prev);
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
+  if (success) return <Navigate to="/authentication/sign-in" replace />;
 
   const submit = async (e) => {
     e.preventDefault();
     setErr("");
     try {
       await register(email, password);
+      setSuccess(true);
     } catch (ex) {
       setErr(ex.message || "Registration Failed");
     }
