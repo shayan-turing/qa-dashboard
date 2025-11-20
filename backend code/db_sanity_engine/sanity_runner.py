@@ -72,6 +72,32 @@ def list_sanity_reports(user_id):
         r["_id"] = str(r["_id"])
         r["user_id"] = user_id
     return reports
+    
+def get_sanity_report(user_id, report_id):
+    """
+    Fetch a single sanity report by its ID.
+    Ensures the report belongs to the requesting user.
+    """
+    try:
+        rid = ObjectId(report_id)
+    except:
+        return None  # invalid ObjectId format
+
+    report = db.reports.find_one({
+        "_id": rid,
+        "user_id": oid(user_id),
+        "report_type": "db_sanity"
+    })
+
+    if not report:
+        return None
+
+    # Convert object fields for output
+    report["_id"] = str(report["_id"])
+    report["user_id"] = str(report["user_id"])
+
+    return report
+
 
 def get_sanity_summary(user_id):
     reports = list_sanity_reports(user_id)
