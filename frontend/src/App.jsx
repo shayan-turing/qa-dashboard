@@ -26,8 +26,19 @@ import routes from "routes";
 // Material Dashboard 2 React contexts
 import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "context";
 
-// Auth Provider
-import { AuthProvider } from "lib/auth";
+// Auth Provider and pages
+import { AuthProvider, useAuth } from "lib/auth";
+import SignIn from "layouts/authentication/sign-in";
+import SignUp from "layouts/authentication/sign-up";
+
+// Protected Route Wrapper
+function ProtectedRoute({ children }) {
+  const { user } = useAuth();
+  if (!user) {
+    return <Navigate to="/authentication/sign-in" replace />;
+  }
+  return children;
+}
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -67,7 +78,14 @@ export default function App() {
       }
 
       if (route.route) {
-        return <Route exact path={route.route} element={route.component} key={route.key} />;
+        return (
+          <Route
+            exact
+            path={route.route}
+            element={<ProtectedRoute>{route.component}</ProtectedRoute>}
+            key={route.key}
+          />
+        );
       }
 
       return null;
@@ -117,8 +135,11 @@ export default function App() {
         )}
         {layout === "vr" && <Configurator />}
         <Routes>
+          <Route path="/authentication/sign-in" element={<SignIn />} />
+          <Route path="/authentication/sign-up" element={<SignUp />} />
           {getRoutes(routes)}
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </ThemeProvider>
     </AuthProvider>
