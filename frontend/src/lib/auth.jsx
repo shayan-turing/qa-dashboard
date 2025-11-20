@@ -5,7 +5,7 @@ const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
 // eslint-disable-next-line react/prop-types
 export function AuthProvider({ children }) {
-  const [apiBase, setApiBase] = useState("https://48804b2f52b8.ngrok-free.app");
+  const [apiBase, setApiBase] = useState( process.env.VITE_API_BASE|| "https://48804b2f52b8.ngrok-free.app");
   const [accessToken, setAccessToken] = useState(storage.get("accessToken") || "");
   const [refreshToken, setRefreshToken] = useState(storage.get("refreshToken") || "");
   const [user, setUser] = useState(accessToken ? { id: "me" } : null);
