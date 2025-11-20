@@ -590,6 +590,26 @@ def preview_excel_columns():
         return jsonify({"error": str(e)}), 500
 
 
+@app.delete("/validate/<report_id>")
+@jwt_required()
+def delete_validation_report(report_id):
+    uid = get_jwt_identity()
+    logger.info(f"DELETE /validate/{report_id} by user {uid}")
+    try:
+        rid = oid(report_id)
+    except Exception:
+        return jsonify({"error": "Invalid report_id"}), 400
+    query = {
+        "_id": rid,
+        "user_id": oid(uid),
+        "report_type": "validation"
+    }
+    result = db.reports.delete_one(query)
+    if result.deleted_count == 0:
+        logger.warning(f" Report {report_id} not found or not owned by user {uid}")
+        return jsonify({"error": "Report not found"}), 404
+    logger.info(f" Report {report_id} deleted successfully")
+    return jsonify({"message": "Report deleted successfully"}), 200
 
 
 
