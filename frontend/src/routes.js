@@ -11,7 +11,6 @@ import SanitySummary from "layouts/sanity/summary";
 import TestGenerator from "layouts/test-generator";
 import TestReports from "layouts/test-reports";
 
-
 // @mui icons
 import Icon from "@mui/material/Icon";
 import ValidateDetails from "layouts/validate/details";
@@ -46,14 +45,14 @@ const routes = [
     route: "/validate",
     component: <Validate />,
   },
-  {
-    type: "collapse",
-    name: "Tasks",
-    key: "tasks",
-    icon: <Icon fontSize="small">task_alt</Icon>,
-    route: "/tasks",
-    component: <Tasks />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Tasks",
+  //   key: "tasks",
+  //   icon: <Icon fontSize="small">task_alt</Icon>,
+  //   route: "/tasks",
+  //   component: <Tasks />,
+  // },
   {
     type: "collapse",
     name: "AI TestGen",
@@ -134,12 +133,12 @@ const routes = [
     component: <SanityReport />,
     key: "sanity-report",
   },
-  {
-    type: "hidden",
-    route: "/sanity/summary",
-    component: <SanitySummary />,
-    key: "sanity-summary",
-  },
+  // {
+  //   type: "hidden",
+  //   route: "/sanity/summary",
+  //   component: <SanitySummary />,
+  //   key: "sanity-summary",
+  // },
 ];
 
 export default routes;
