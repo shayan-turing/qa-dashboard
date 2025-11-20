@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
 
   backend:
-    build: ./backend
+    build: "backend code"
     container_name: myapp-backend
     expose:
       - "8080"                  
