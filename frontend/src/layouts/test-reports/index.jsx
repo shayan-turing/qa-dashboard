@@ -122,14 +122,31 @@ export default function TestReports() {
               </MDBox>
               <MDBox pt={3}>
                 {loading ? (
-                  <MDBox p={3} textAlign="center">
-                    <CircularProgress color="info" />
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                    p={3}
+                  >
+                    <CircularProgress size={60} thickness={4} />
                     <MDTypography variant="body2" color="text" mt={2}>
                       Loading reports...
                     </MDTypography>
                   </MDBox>
                 ) : reports.length === 0 ? (
-                  <MDBox p={3} textAlign="center">
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                    p={3}
+                  >
+                    <Icon fontSize="large" sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}>
+                      science
+                    </Icon>
                     <MDTypography variant="body2" color="text">
                       No reports found yet.
                     </MDTypography>

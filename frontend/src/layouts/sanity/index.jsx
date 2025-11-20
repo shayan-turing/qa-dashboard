@@ -24,6 +24,7 @@ import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Divider from "@mui/material/Divider";
+import CircularProgress from "@mui/material/CircularProgress";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -48,6 +49,9 @@ export default function Sanity() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadResp, setUploadResp] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Loading state
+  const [isLoadingReports, setIsLoadingReports] = useState(true);
 
   // Tab state for results
   const [activeTab, setActiveTab] = useState(0);
@@ -137,6 +141,7 @@ export default function Sanity() {
   };
 
   const loadReports = async () => {
+    setIsLoadingReports(true);
     try {
       const res = await apiFetch("/sanity/reports");
       const data = await res.json();
@@ -145,6 +150,46 @@ export default function Sanity() {
       setToast({
         open: true,
         message: "Error loading reports",
+        severity: "error",
+      });
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
+
+  const handleViewDetail = (reportId) => {
+    navigate(`/sanity/${reportId}`);
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    if (!window.confirm("Are you sure you want to delete this report?")) {
+      return;
+    }
+
+    try {
+      const res = await apiFetch(`/sanity/reports/${reportId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setToast({
+          open: true,
+          message: "Report deleted successfully",
+          severity: "success",
+        });
+        loadReports();
+      } else {
+        const data = await res.json();
+        setToast({
+          open: true,
+          message: data.error || "Failed to delete report",
+          severity: "error",
+        });
+      }
+    } catch (err) {
+      setToast({
+        open: true,
+        message: err.message || "Error deleting report",
         severity: "error",
       });
     }
@@ -182,7 +227,7 @@ export default function Sanity() {
                     Run Sanity Check
                   </MDTypography>
                   <Grid container spacing={2}>
-                    <Grid  item xs={12} lg={6}>
+                    <Grid item xs={12} lg={6}>
                       {/* Title Input */}
                       <TextField
                         fullWidth
@@ -216,7 +261,11 @@ export default function Sanity() {
                   {isUploading && (
                     <MDBox mb={3}>
                       <LinearProgress />
-                      <MDTypography variant="caption" color="text" mt={1}>
+                      <MDTypography
+                        variant="caption"
+                        color="text.secondary"
+                        mt={1}
+                      >
                         Processing sanity check...
                       </MDTypography>
                     </MDBox>
@@ -267,13 +316,18 @@ export default function Sanity() {
                           <Card
                             variant="outlined"
                             sx={{
-                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              background:
+                                "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                               color: "white",
                             }}
                           >
                             <MDBox p={2} textAlign="center">
                               <Icon fontSize="large">check_circle</Icon>
-                              <MDTypography variant="h4" fontWeight="bold" color="white">
+                              <MDTypography
+                                variant="h4"
+                                fontWeight="bold"
+                                color="white"
+                              >
                                 {uploadResp.results.generic_fk_summary.passes}
                               </MDTypography>
                               <MDTypography variant="body2" color="white">
@@ -286,13 +340,18 @@ export default function Sanity() {
                           <Card
                             variant="outlined"
                             sx={{
-                              background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                              background:
+                                "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
                               color: "white",
                             }}
                           >
                             <MDBox p={2} textAlign="center">
                               <Icon fontSize="large">error</Icon>
-                              <MDTypography variant="h4" fontWeight="bold" color="white">
+                              <MDTypography
+                                variant="h4"
+                                fontWeight="bold"
+                                color="white"
+                              >
                                 {uploadResp.results.generic_fk_summary.fails}
                               </MDTypography>
                               <MDTypography variant="body2" color="white">
@@ -305,13 +364,18 @@ export default function Sanity() {
                           <Card
                             variant="outlined"
                             sx={{
-                              background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                              background:
+                                "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
                               color: "white",
                             }}
                           >
                             <MDBox p={2} textAlign="center">
                               <Icon fontSize="large">list_alt</Icon>
-                              <MDTypography variant="h4" fontWeight="bold" color="white">
+                              <MDTypography
+                                variant="h4"
+                                fontWeight="bold"
+                                color="white"
+                              >
                                 {uploadResp.results.generic_fk_summary.total}
                               </MDTypography>
                               <MDTypography variant="body2" color="white">
@@ -326,13 +390,19 @@ export default function Sanity() {
                     {/* Tables Count */}
                     {uploadResp.results.tables && (
                       <Grid item xs={12} sm={4}>
-                        <Card variant="outlined" sx={{ backgroundColor: "action.hover" }}>
+                        <Card
+                          variant="outlined"
+                          sx={{ backgroundColor: "action.hover" }}
+                        >
                           <MDBox p={2} textAlign="center">
                             <Icon fontSize="large">table_chart</Icon>
                             <MDTypography variant="h4" fontWeight="bold">
                               {Object.keys(uploadResp.results.tables).length}
                             </MDTypography>
-                            <MDTypography variant="body2" color="text">
+                            <MDTypography
+                              variant="body2"
+                              color="text.secondary"
+                            >
                               Tables Analyzed
                             </MDTypography>
                           </MDBox>
@@ -349,14 +419,26 @@ export default function Sanity() {
                       variant="scrollable"
                       scrollButtons="auto"
                     >
-                      <Tab label="Enum Tables" icon={<Icon>list</Icon>} iconPosition="start" />
-                      <Tab label="Relationships" icon={<Icon>hub</Icon>} iconPosition="start" />
+                      <Tab
+                        label="Enum Tables"
+                        icon={<Icon>list</Icon>}
+                        iconPosition="start"
+                      />
+                      <Tab
+                        label="Relationships"
+                        icon={<Icon>hub</Icon>}
+                        iconPosition="start"
+                      />
                       <Tab
                         label="Generic Relationships"
                         icon={<Icon>account_tree</Icon>}
                         iconPosition="start"
                       />
-                      <Tab label="Tables" icon={<Icon>table_chart</Icon>} iconPosition="start" />
+                      <Tab
+                        label="Tables"
+                        icon={<Icon>table_chart</Icon>}
+                        iconPosition="start"
+                      />
                     </Tabs>
                   </Box>
 
@@ -364,64 +446,96 @@ export default function Sanity() {
                   {/* Tab 0: Enum Tables */}
                   {activeTab === 0 && uploadResp.results.enum_tables && (
                     <Box>
-                      {Object.entries(uploadResp.results.enum_tables).map(([tableName, checks]) => (
-                        <Accordion key={tableName}>
-                          <AccordionSummary expandIcon={<Icon>expand_more</Icon>}>
-                            <MDBox display="flex" alignItems="center" width="100%">
-                              <Chip label={tableName} color="primary" size="small" sx={{ mr: 2 }} />
-                              <MDTypography variant="body2" color="text">
-                                {checks.length || 0} checks
-                              </MDTypography>
-                              <MDBox ml="auto" mr={2}>
+                      {Object.entries(uploadResp.results.enum_tables).map(
+                        ([tableName, checks]) => (
+                          <Accordion key={tableName}>
+                            <AccordionSummary
+                              expandIcon={<Icon>expand_more</Icon>}
+                            >
+                              <MDBox
+                                display="flex"
+                                alignItems="center"
+                                width="100%"
+                              >
                                 <Chip
-                                  label={`${checks.filter((c) => c.result).length}/${checks.length} passed`}
-                                  color={checks.every((c) => c.result) ? "success" : "warning"}
+                                  label={tableName}
+                                  color="primary"
                                   size="small"
+                                  sx={{ mr: 2 }}
                                 />
+                                <MDTypography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  {checks.length || 0} checks
+                                </MDTypography>
+                                <MDBox ml="auto" mr={2}>
+                                  <Chip
+                                    label={`${
+                                      checks.filter((c) => c.result).length
+                                    }/${checks.length} passed`}
+                                    color={
+                                      checks.every((c) => c.result)
+                                        ? "success"
+                                        : "warning"
+                                    }
+                                    size="small"
+                                  />
+                                </MDBox>
                               </MDBox>
-                            </MDBox>
-                          </AccordionSummary>
-                          <AccordionDetails>
-                            <TableContainer>
-                              <Table size="small">
-                                <TableHead>
-                                  <TableRow>
-                                    <TableCell>Check</TableCell>
-                                    <TableCell>Result</TableCell>
-                                    <TableCell>Details</TableCell>
-                                  </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                  {checks.map((check, idx) => (
-                                    <TableRow key={idx}>
-                                      <TableCell>{check.check}</TableCell>
-                                      <TableCell>
-                                        <Chip
-                                          icon={
-                                            <Icon fontSize="small">
-                                              {check.result ? "check_circle" : "cancel"}
-                                            </Icon>
-                                          }
-                                          label={check.result ? "PASS" : "FAIL"}
-                                          color={check.result ? "success" : "error"}
-                                          size="small"
-                                        />
-                                      </TableCell>
-                                      <TableCell>
-                                        <MDTypography variant="caption" color="text">
-                                          {check.details && check.details.length > 0
-                                            ? JSON.stringify(check.details)
-                                            : "—"}
-                                        </MDTypography>
-                                      </TableCell>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                              <TableContainer>
+                                <Table size="small">
+                                  <TableHead>
+                                    <TableRow>
+                                      <TableCell>Check</TableCell>
+                                      <TableCell>Result</TableCell>
+                                      <TableCell>Details</TableCell>
                                     </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </TableContainer>
-                          </AccordionDetails>
-                        </Accordion>
-                      ))}
+                                  </TableHead>
+                                  <TableBody>
+                                    {checks.map((check, idx) => (
+                                      <TableRow key={idx}>
+                                        <TableCell>{check.check}</TableCell>
+                                        <TableCell>
+                                          <Chip
+                                            icon={
+                                              <Icon fontSize="small">
+                                                {check.result
+                                                  ? "check_circle"
+                                                  : "cancel"}
+                                              </Icon>
+                                            }
+                                            label={
+                                              check.result ? "PASS" : "FAIL"
+                                            }
+                                            color={
+                                              check.result ? "success" : "error"
+                                            }
+                                            size="small"
+                                          />
+                                        </TableCell>
+                                        <TableCell>
+                                          <MDTypography
+                                            variant="caption"
+                                            color="text.secondary"
+                                          >
+                                            {check.details &&
+                                            check.details.length > 0
+                                              ? JSON.stringify(check.details)
+                                              : "—"}
+                                          </MDTypography>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </TableContainer>
+                            </AccordionDetails>
+                          </Accordion>
+                        )
+                      )}
                     </Box>
                   )}
 
@@ -430,8 +544,14 @@ export default function Sanity() {
                     <Box>
                       {uploadResp.results.relationships.map((rel, idx) => (
                         <Accordion key={idx}>
-                          <AccordionSummary expandIcon={<Icon>expand_more</Icon>}>
-                            <MDBox display="flex" alignItems="center" width="100%">
+                          <AccordionSummary
+                            expandIcon={<Icon>expand_more</Icon>}
+                          >
+                            <MDBox
+                              display="flex"
+                              alignItems="center"
+                              width="100%"
+                            >
                               <Icon sx={{ mr: 1 }}>link</Icon>
                               <MDTypography variant="body2" fontWeight="medium">
                                 {rel.relationship}
@@ -447,7 +567,11 @@ export default function Sanity() {
                           </AccordionSummary>
                           <AccordionDetails>
                             <MDBox>
-                              <MDTypography variant="body2" fontWeight="medium" mb={1}>
+                              <MDTypography
+                                variant="body2"
+                                fontWeight="medium"
+                                mb={1}
+                              >
                                 {rel.check}
                               </MDTypography>
                               {rel.details && (
@@ -460,7 +584,12 @@ export default function Sanity() {
                                     fontSize: "0.875rem",
                                   }}
                                 >
-                                  <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                                  <pre
+                                    style={{
+                                      margin: 0,
+                                      whiteSpace: "pre-wrap",
+                                    }}
+                                  >
                                     {JSON.stringify(rel.details, null, 2)}
                                   </pre>
                                 </Box>
@@ -473,111 +602,169 @@ export default function Sanity() {
                   )}
 
                   {/* Tab 2: Generic Relationships */}
-                  {activeTab === 2 && uploadResp.results.generic_relationships && (
-                    <Box>
-                      {uploadResp.results.generic_relationships.map((rel, idx) => (
-                        <Accordion key={idx}>
-                          <AccordionSummary expandIcon={<Icon>expand_more</Icon>}>
-                            <MDBox display="flex" alignItems="center" width="100%">
-                              <Icon sx={{ mr: 1 }}>device_hub</Icon>
-                              <MDTypography variant="body2" fontWeight="medium">
-                                {rel.relationship}
-                              </MDTypography>
-                              <MDBox ml="auto" mr={2}>
-                                <Chip
-                                  label={
-                                    typeof rel.result === "boolean"
-                                      ? rel.result
-                                        ? "PASS"
-                                        : "FAIL"
-                                      : `${rel.result}`
-                                  }
-                                  color={
-                                    typeof rel.result === "boolean"
-                                      ? rel.result
-                                        ? "success"
-                                        : "error"
-                                      : "info"
-                                  }
-                                  size="small"
-                                />
-                              </MDBox>
-                            </MDBox>
-                          </AccordionSummary>
-                          <AccordionDetails>
-                            <MDBox>
-                              <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                                {rel.check}
-                              </MDTypography>
-                              {rel.kind && (
-                                <Chip label={`Kind: ${rel.kind}`} size="small" sx={{ mb: 1 }} />
-                              )}
-                              {rel.details && (
-                                <Box
-                                  sx={{
-                                    backgroundColor: "action.hover",
-                                    p: 2,
-                                    borderRadius: 1,
-                                    fontFamily: "monospace",
-                                    fontSize: "0.875rem",
-                                    mt: 1,
-                                  }}
+                  {activeTab === 2 &&
+                    uploadResp.results.generic_relationships && (
+                      <Box>
+                        {uploadResp.results.generic_relationships.map(
+                          (rel, idx) => (
+                            <Accordion key={idx}>
+                              <AccordionSummary
+                                expandIcon={<Icon>expand_more</Icon>}
+                              >
+                                <MDBox
+                                  display="flex"
+                                  alignItems="center"
+                                  width="100%"
                                 >
-                                  <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-                                    {JSON.stringify(rel.details, null, 2)}
-                                  </pre>
-                                </Box>
-                              )}
-                            </MDBox>
-                          </AccordionDetails>
-                        </Accordion>
-                      ))}
-                    </Box>
-                  )}
+                                  <Icon sx={{ mr: 1 }}>device_hub</Icon>
+                                  <MDTypography
+                                    variant="body2"
+                                    fontWeight="medium"
+                                  >
+                                    {rel.relationship}
+                                  </MDTypography>
+                                  <MDBox ml="auto" mr={2}>
+                                    <Chip
+                                      label={
+                                        typeof rel.result === "boolean"
+                                          ? rel.result
+                                            ? "PASS"
+                                            : "FAIL"
+                                          : `${rel.result}`
+                                      }
+                                      color={
+                                        typeof rel.result === "boolean"
+                                          ? rel.result
+                                            ? "success"
+                                            : "error"
+                                          : "info"
+                                      }
+                                      size="small"
+                                    />
+                                  </MDBox>
+                                </MDBox>
+                              </AccordionSummary>
+                              <AccordionDetails>
+                                <MDBox>
+                                  <MDTypography
+                                    variant="body2"
+                                    fontWeight="medium"
+                                    mb={1}
+                                  >
+                                    {rel.check}
+                                  </MDTypography>
+                                  {rel.kind && (
+                                    <Chip
+                                      label={`Kind: ${rel.kind}`}
+                                      size="small"
+                                      sx={{ mb: 1 }}
+                                    />
+                                  )}
+                                  {rel.details && (
+                                    <Box
+                                      sx={{
+                                        backgroundColor: "action.hover",
+                                        p: 2,
+                                        borderRadius: 1,
+                                        fontFamily: "monospace",
+                                        fontSize: "0.875rem",
+                                        mt: 1,
+                                      }}
+                                    >
+                                      <pre
+                                        style={{
+                                          margin: 0,
+                                          whiteSpace: "pre-wrap",
+                                        }}
+                                      >
+                                        {JSON.stringify(rel.details, null, 2)}
+                                      </pre>
+                                    </Box>
+                                  )}
+                                </MDBox>
+                              </AccordionDetails>
+                            </Accordion>
+                          )
+                        )}
+                      </Box>
+                    )}
 
                   {/* Tab 3: Tables */}
                   {activeTab === 3 && uploadResp.results.tables && (
                     <Box>
                       <Grid container spacing={2} mb={2}>
-                        {Object.entries(uploadResp.results.tables).map(([tableName, tableData]) => (
-                          <Grid item xs={12} md={6} lg={4} key={tableName}>
-                            <Card variant="outlined">
-                              <MDBox p={2}>
-                                <MDBox display="flex" alignItems="center" mb={1}>
-                                  <Icon sx={{ mr: 1 }}>table_chart</Icon>
-                                  <MDTypography variant="h6" fontWeight="medium">
-                                    {tableName}
+                        {Object.entries(uploadResp.results.tables).map(
+                          ([tableName, tableData]) => (
+                            <Grid item xs={12} md={6} lg={4} key={tableName}>
+                              <Card variant="outlined">
+                                <MDBox p={2}>
+                                  <MDBox
+                                    display="flex"
+                                    alignItems="center"
+                                    mb={1}
+                                  >
+                                    <Icon sx={{ mr: 1 }}>table_chart</Icon>
+                                    <MDTypography
+                                      variant="h6"
+                                      fontWeight="medium"
+                                    >
+                                      {tableName}
+                                    </MDTypography>
+                                  </MDBox>
+                                  <Divider sx={{ my: 1 }} />
+                                  <MDTypography
+                                    variant="body2"
+                                    color="text.primary"
+                                    mb={1}
+                                  >
+                                    <strong>Row Count:</strong>{" "}
+                                    {tableData.row_count || 0}
                                   </MDTypography>
+                                  <MDTypography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    fontWeight="medium"
+                                  >
+                                    Checks: {tableData.checks?.length || 0}
+                                  </MDTypography>
+                                  {tableData.checks &&
+                                    tableData.checks.length > 0 && (
+                                      <Box mt={1}>
+                                        {tableData.checks.map((check, idx) => (
+                                          <MDBox
+                                            key={idx}
+                                            display="flex"
+                                            alignItems="center"
+                                            mt={0.5}
+                                          >
+                                            <Icon
+                                              fontSize="small"
+                                              color={
+                                                check.result
+                                                  ? "success"
+                                                  : "error"
+                                              }
+                                              sx={{ mr: 0.5 }}
+                                            >
+                                              {check.result
+                                                ? "check_circle"
+                                                : "cancel"}
+                                            </Icon>
+                                            <MDTypography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              {check.check}
+                                            </MDTypography>
+                                          </MDBox>
+                                        ))}
+                                      </Box>
+                                    )}
                                 </MDBox>
-                                <Divider sx={{ my: 1 }} />
-                                <MDTypography variant="body2" color="text" mb={1}>
-                                  <strong>Row Count:</strong> {tableData.row_count || 0}
-                                </MDTypography>
-                                <MDTypography variant="caption" color="text" fontWeight="medium">
-                                  Checks: {tableData.checks?.length || 0}
-                                </MDTypography>
-                                {tableData.checks && tableData.checks.length > 0 && (
-                                  <Box mt={1}>
-                                    {tableData.checks.map((check, idx) => (
-                                      <MDBox key={idx} display="flex" alignItems="center" mt={0.5}>
-                                        <Icon
-                                          fontSize="small"
-                                          color={check.result ? "success" : "error"}
-                                          sx={{ mr: 0.5 }}
-                                        >
-                                          {check.result ? "check_circle" : "cancel"}
-                                        </Icon>
-                                        <MDTypography variant="caption" color="text">
-                                          {check.check}
-                                        </MDTypography>
-                                      </MDBox>
-                                    ))}
-                                  </Box>
-                                )}
-                              </MDBox>
-                            </Card>
-                          </Grid>
-                        ))}
+                              </Card>
+                            </Grid>
+                          )
+                        )}
                       </Grid>
                     </Box>
                   )}
@@ -593,10 +780,37 @@ export default function Sanity() {
                 <MDTypography variant="h5" fontWeight="medium" mb={3}>
                   Recent Reports
                 </MDTypography>
-                {reports.length === 0 ? (
-                  <MDTypography variant="body2" color="text">
-                    No reports yet.
-                  </MDTypography>
+                {isLoadingReports ? (
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <CircularProgress size={60} thickness={4} />
+                    <MDTypography variant="body2" color="text.secondary" mt={2}>
+                      Loading reports...
+                    </MDTypography>
+                  </MDBox>
+                ) : reports.length === 0 ? (
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <Icon
+                      fontSize="large"
+                      sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}
+                    >
+                      folder_off
+                    </Icon>
+                    <MDTypography variant="body2" color="text.secondary">
+                      No reports yet.
+                    </MDTypography>
+                  </MDBox>
                 ) : (
                   <Grid container spacing={2}>
                     {reports.map((r) => (
@@ -610,11 +824,38 @@ export default function Sanity() {
                             >
                               {r.title}
                             </MDTypography>
-                            <MDTypography variant="caption" color="text">
+                            <MDTypography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                              mb={2}
+                            >
                               {r.created_at
                                 ? new Date(r.created_at).toLocaleString()
                                 : ""}
                             </MDTypography>
+                            <MDBox display="flex" gap={1}>
+                              <MDButton
+                                variant="gradient"
+                                color="info"
+                                size="small"
+                                fullWidth
+                                onClick={() => handleViewDetail(r._id)}
+                              >
+                                <Icon sx={{ mr: 0.5 }}>visibility</Icon>
+                                View Detail
+                              </MDButton>
+                              <MDButton
+                                variant="gradient"
+                                color="error"
+                                size="small"
+                                fullWidth
+                                onClick={() => handleDeleteReport(r._id)}
+                              >
+                                <Icon sx={{ mr: 0.5 }}>delete</Icon>
+                                Delete
+                              </MDButton>
+                            </MDBox>
                           </MDBox>
                         </Card>
                       </Grid>

@@ -22,6 +22,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Icon from "@mui/material/Icon";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -310,13 +311,33 @@ export default function Reports() {
                 </MDTypography>
 
                 {loading ? (
-                  <MDTypography variant="body2" color="text">
-                    Loading reports...
-                  </MDTypography>
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <CircularProgress size={60} thickness={4} />
+                    <MDTypography variant="body2" color="text" mt={2}>
+                      Loading reports...
+                    </MDTypography>
+                  </MDBox>
                 ) : items.length === 0 ? (
-                  <MDTypography variant="body2" color="text">
-                    No reports yet.
-                  </MDTypography>
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <Icon fontSize="large" sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}>
+                      description
+                    </Icon>
+                    <MDTypography variant="body2" color="text">
+                      No reports yet.
+                    </MDTypography>
+                  </MDBox>
                 ) : (
                   <Grid container spacing={2}>
                     {items.map((r) => {

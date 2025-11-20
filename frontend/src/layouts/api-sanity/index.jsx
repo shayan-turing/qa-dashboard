@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 // @mui material components
 import Grid from "@mui/material/Grid";
@@ -21,6 +22,7 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -36,10 +38,15 @@ import { useAuth } from "../../lib/auth";
 
 export default function ApiSanityChecker() {
   const { apiFetch } = useAuth();
+  const navigate = useNavigate();
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [reportData, setReportData] = useState(null);
+
+  // Reports list state
+  const [reports, setReports] = useState([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(true);
 
   // Filters for All APIs table
   const [filterInterface, setFilterInterface] = useState("__all__");
@@ -58,8 +65,9 @@ export default function ApiSanityChecker() {
     severity: "info",
   });
 
-  // Load last report on mount
+  // Load reports on mount
   useEffect(() => {
+    loadAllReports();
     loadLastReport();
   }, []);
 
@@ -116,6 +124,7 @@ export default function ApiSanityChecker() {
           message: "API Sanity Check completed successfully",
           severity: "success",
         });
+        loadAllReports();
         loadLastReport();
       } else {
         setToast({
@@ -135,15 +144,80 @@ export default function ApiSanityChecker() {
     }
   };
 
+  const loadAllReports = async () => {
+    setIsLoadingReports(true);
+    try {
+      const res = await apiFetch("/api_sanity_check/reports");
+      const data = await res.json();
+      if (res.ok) {
+        setReports(Array.isArray(data) ? data : data.items || []);
+      }
+    } catch (err) {
+      console.error("Error loading reports:", err);
+      setToast({
+        open: true,
+        message: "Error loading reports",
+        severity: "error",
+      });
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
+
   const loadLastReport = async () => {
     try {
       const res = await apiFetch("/api_sanity_check/reports");
       const data = await res.json();
-      if (res.ok && data) {
-        setReportData(data);
+      if (res.ok) {
+        const reportsList = Array.isArray(data) ? data : data.items || [];
+        if (reportsList.length > 0) {
+          setReportData(reportsList[0]);
+        }
       }
     } catch (err) {
       console.error("Error loading last report:", err);
+    }
+  };
+
+  const handleViewDetail = (reportId) => {
+    navigate(`/api-sanity/${reportId}`);
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    if (!window.confirm("Are you sure you want to delete this report?")) {
+      return;
+    }
+
+    try {
+      const res = await apiFetch(`/api_sanity_check/deletions/${reportId}/`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setToast({
+          open: true,
+          message: "Report deleted successfully",
+          severity: "success",
+        });
+        loadAllReports();
+        // Clear reportData if the deleted report is currently displayed
+        if (reportData && reportData._id === reportId) {
+          setReportData(null);
+        }
+      } else {
+        const data = await res.json();
+        setToast({
+          open: true,
+          message: data.error || "Failed to delete report",
+          severity: "error",
+        });
+      }
+    } catch (err) {
+      setToast({
+        open: true,
+        message: err.message || "Error deleting report",
+        severity: "error",
+      });
     }
   };
 
@@ -284,18 +358,7 @@ export default function ApiSanityChecker() {
               alignItems="center"
             >
               <MDTypography variant="h4" fontWeight="medium">
-                <Icon
-                  sx={{
-                    verticalAlign: "middle",
-                    mr: 1,
-                    background:
-                      "linear-gradient(135deg, #00d4ff 0%, #00ff88 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  api
-                </Icon>
+                <Icon sx={{ verticalAlign: "middle", mr: 1 }}>api</Icon>
                 API Sanity Check Report
               </MDTypography>
             </MDBox>
@@ -453,10 +516,30 @@ export default function ApiSanityChecker() {
                       <Table>
                         <TableHead sx={{ backgroundColor: "action.hover" }}>
                           <TableRow>
-                            <TableCell>Interface</TableCell>
-                            <TableCell>Total APIs</TableCell>
-                            <TableCell>GET</TableCell>
-                            <TableCell>SET</TableCell>
+                            <TableCell
+                              align="left"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              Interface
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              Total APIs
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              GET
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              SET
+                            </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -466,15 +549,26 @@ export default function ApiSanityChecker() {
                               const s = ifaceSummary[iface];
                               return (
                                 <TableRow key={iface} hover>
-                                  <TableCell>
+                                  <TableCell
+                                    align="left"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
                                     <Chip
                                       label={iface}
                                       size="small"
                                       variant="outlined"
                                     />
                                   </TableCell>
-                                  <TableCell>{s.total_apis}</TableCell>
-                                  <TableCell>
+                                  <TableCell
+                                    align="center"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
+                                    {s.total_apis}
+                                  </TableCell>
+                                  <TableCell
+                                    align="center"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
                                     {s.get.count}{" "}
                                     <MDTypography
                                       variant="caption"
@@ -483,7 +577,10 @@ export default function ApiSanityChecker() {
                                       ({s.get.percent?.toFixed(2)}%)
                                     </MDTypography>
                                   </TableCell>
-                                  <TableCell>
+                                  <TableCell
+                                    align="center"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
                                     {s.set.count}{" "}
                                     <MDTypography
                                       variant="caption"
@@ -536,14 +633,24 @@ export default function ApiSanityChecker() {
                       <Table>
                         <TableHead sx={{ backgroundColor: "action.hover" }}>
                           <TableRow>
-                            <TableCell>API Name</TableCell>
-                            <TableCell>Interfaces Involved</TableCell>
+                            <TableCell
+                              align="left"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              API Name
+                            </TableCell>
+                            <TableCell
+                              align="left"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              Interfaces Involved
+                            </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
                           {duplicates.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={2}>
+                              <TableCell colSpan={2} align="center">
                                 <MDTypography variant="body2" color="success">
                                   ✅ No duplicates found
                                 </MDTypography>
@@ -552,14 +659,20 @@ export default function ApiSanityChecker() {
                           ) : (
                             duplicates.map((dup, idx) => (
                               <TableRow key={idx} hover>
-                                <TableCell>
+                                <TableCell
+                                  align="left"
+                                  sx={{ verticalAlign: "middle" }}
+                                >
                                   <Chip
                                     label={dup.api_name}
                                     size="small"
                                     color="warning"
                                   />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                  align="left"
+                                  sx={{ verticalAlign: "middle" }}
+                                >
                                   {(dup.interfaces_involved || []).join(", ")}
                                 </TableCell>
                               </TableRow>
@@ -597,11 +710,36 @@ export default function ApiSanityChecker() {
                       <Table>
                         <TableHead sx={{ backgroundColor: "action.hover" }}>
                           <TableRow>
-                            <TableCell>Interface</TableCell>
-                            <TableCell>Files Count</TableCell>
-                            <TableCell>YAML Count</TableCell>
-                            <TableCell>Files not in YAML</TableCell>
-                            <TableCell>YAML entries missing files</TableCell>
+                            <TableCell
+                              align="left"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              Interface
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              Files Count
+                            </TableCell>
+                            <TableCell
+                              align="center"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              YAML Count
+                            </TableCell>
+                            <TableCell
+                              align="left"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              Files not in YAML
+                            </TableCell>
+                            <TableCell
+                              align="left"
+                              sx={{ verticalAlign: "middle" }}
+                            >
+                              YAML entries missing files
+                            </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -611,22 +749,41 @@ export default function ApiSanityChecker() {
                               const c = comparison[iface];
                               return (
                                 <TableRow key={iface} hover>
-                                  <TableCell>
+                                  <TableCell
+                                    align="left"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
                                     <Chip
                                       label={iface}
                                       size="small"
                                       variant="outlined"
                                     />
                                   </TableCell>
-                                  <TableCell>{c.files_count}</TableCell>
-                                  <TableCell>{c.yaml_count}</TableCell>
-                                  <TableCell>
+                                  <TableCell
+                                    align="center"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
+                                    {c.files_count}
+                                  </TableCell>
+                                  <TableCell
+                                    align="center"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
+                                    {c.yaml_count}
+                                  </TableCell>
+                                  <TableCell
+                                    align="left"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
                                     {c.missing_in_yaml &&
                                     c.missing_in_yaml.length > 0
                                       ? c.missing_in_yaml.join(", ")
                                       : "—"}
                                   </TableCell>
-                                  <TableCell>
+                                  <TableCell
+                                    align="left"
+                                    sx={{ verticalAlign: "middle" }}
+                                  >
                                     {c.extra_in_yaml &&
                                     c.extra_in_yaml.length > 0
                                       ? c.extra_in_yaml.join(", ")
@@ -733,7 +890,12 @@ export default function ApiSanityChecker() {
                         <TableHead>
                           <TableRow>
                             <TableCell
-                              sx={{ cursor: "pointer", fontWeight: "bold" }}
+                              align="left"
+                              sx={{
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                verticalAlign: "middle",
+                              }}
                               onClick={() => handleSort("interface")}
                             >
                               Interface{" "}
@@ -741,7 +903,12 @@ export default function ApiSanityChecker() {
                                 (sortDir === "asc" ? "▲" : "▼")}
                             </TableCell>
                             <TableCell
-                              sx={{ cursor: "pointer", fontWeight: "bold" }}
+                              align="left"
+                              sx={{
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                verticalAlign: "middle",
+                              }}
                               onClick={() => handleSort("api")}
                             >
                               API Signature{" "}
@@ -749,7 +916,12 @@ export default function ApiSanityChecker() {
                                 (sortDir === "asc" ? "▲" : "▼")}
                             </TableCell>
                             <TableCell
-                              sx={{ cursor: "pointer", fontWeight: "bold" }}
+                              align="center"
+                              sx={{
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                verticalAlign: "middle",
+                              }}
                               onClick={() => handleSort("type")}
                             >
                               Type{" "}
@@ -757,14 +929,25 @@ export default function ApiSanityChecker() {
                                 (sortDir === "asc" ? "▲" : "▼")}
                             </TableCell>
                             <TableCell
-                              sx={{ cursor: "pointer", fontWeight: "bold" }}
+                              align="center"
+                              sx={{
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                verticalAlign: "middle",
+                              }}
                               onClick={() => handleSort("match")}
                             >
                               Params Match{" "}
                               {sortKey === "match" &&
                                 (sortDir === "asc" ? "▲" : "▼")}
                             </TableCell>
-                            <TableCell sx={{ fontWeight: "bold" }}>
+                            <TableCell
+                              align="left"
+                              sx={{
+                                fontWeight: "bold",
+                                verticalAlign: "middle",
+                              }}
+                            >
                               Details
                             </TableCell>
                           </TableRow>
@@ -781,14 +964,20 @@ export default function ApiSanityChecker() {
                           ) : (
                             filteredApis.map((api, idx) => (
                               <TableRow key={idx} hover>
-                                <TableCell>
+                                <TableCell
+                                  align="left"
+                                  sx={{ verticalAlign: "middle" }}
+                                >
                                   <Chip
                                     label={api.interface}
                                     size="small"
                                     variant="outlined"
                                   />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                  align="left"
+                                  sx={{ verticalAlign: "middle" }}
+                                >
                                   <MDTypography
                                     variant="caption"
                                     component="code"
@@ -800,7 +989,10 @@ export default function ApiSanityChecker() {
                                     {formatSignature(api)}
                                   </MDTypography>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                  align="center"
+                                  sx={{ verticalAlign: "middle" }}
+                                >
                                   <Chip
                                     label={(
                                       api.classification || ""
@@ -815,7 +1007,10 @@ export default function ApiSanityChecker() {
                                     }
                                   />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                  align="center"
+                                  sx={{ verticalAlign: "middle" }}
+                                >
                                   {api.param_match ? (
                                     <Chip
                                       icon={
@@ -838,7 +1033,10 @@ export default function ApiSanityChecker() {
                                     />
                                   )}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                  align="left"
+                                  sx={{ verticalAlign: "middle" }}
+                                >
                                   <MDTypography variant="caption" color="text">
                                     {renderMismatchDetails(api)}
                                   </MDTypography>
@@ -861,6 +1059,124 @@ export default function ApiSanityChecker() {
               </Grid>
             </>
           )}
+
+          {/* All Reports Section */}
+          <Grid item xs={12}>
+            <Card>
+              <MDBox p={3}>
+                <MDTypography variant="h5" fontWeight="medium" mb={3}>
+                  API Sanity Reports
+                </MDTypography>
+                {isLoadingReports ? (
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <CircularProgress size={60} thickness={4} />
+                    <MDTypography variant="body2" color="text" mt={2}>
+                      Loading reports...
+                    </MDTypography>
+                  </MDBox>
+                ) : reports.length === 0 ? (
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <Icon
+                      fontSize="large"
+                      sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}
+                    >
+                      api
+                    </Icon>
+                    <MDTypography variant="body2" color="text">
+                      No API sanity reports yet.
+                    </MDTypography>
+                  </MDBox>
+                ) : (
+                  <Grid container spacing={2}>
+                    {reports.map((report) => (
+                      <Grid item xs={12} md={6} lg={4} key={report._id}>
+                        <Card variant="outlined">
+                          <MDBox p={2}>
+                            <MDTypography
+                              variant="h6"
+                              fontWeight="medium"
+                              mb={1}
+                            >
+                              {report.title || "API Sanity Report"}
+                            </MDTypography>
+                            <MDTypography
+                              variant="caption"
+                              color="text"
+                              display="block"
+                              mb={1}
+                            >
+                              {report.created_at
+                                ? new Date(report.created_at).toLocaleString()
+                                : ""}
+                            </MDTypography>
+                            {report.results?.summary?.overall && (
+                              <MDBox mb={2}>
+                                <MDTypography
+                                  variant="caption"
+                                  color="text"
+                                  display="block"
+                                >
+                                  <strong>Total APIs:</strong>{" "}
+                                  {report.results.summary.overall.total_apis ||
+                                    0}
+                                </MDTypography>
+                                <MDTypography
+                                  variant="caption"
+                                  color="text"
+                                  display="block"
+                                >
+                                  <strong>GET:</strong>{" "}
+                                  {report.results.summary.overall.get?.count ||
+                                    0}{" "}
+                                  • <strong>SET:</strong>{" "}
+                                  {report.results.summary.overall.set?.count ||
+                                    0}
+                                </MDTypography>
+                              </MDBox>
+                            )}
+                            <MDBox display="flex" gap={1}>
+                              <MDButton
+                                variant="gradient"
+                                color="info"
+                                size="small"
+                                fullWidth
+                                onClick={() => handleViewDetail(report._id)}
+                              >
+                                <Icon sx={{ mr: 0.5 }}>visibility</Icon>
+                                View Detail
+                              </MDButton>
+                              <MDButton
+                                variant="gradient"
+                                color="error"
+                                size="small"
+                                fullWidth
+                                onClick={() => handleDeleteReport(report._id)}
+                              >
+                                <Icon sx={{ mr: 0.5 }}>delete</Icon>
+                                Delete
+                              </MDButton>
+                            </MDBox>
+                          </MDBox>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                )}
+              </MDBox>
+            </Card>
+          </Grid>
         </Grid>
       </MDBox>
 

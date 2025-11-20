@@ -8,6 +8,7 @@ import Tasks from "layouts/tasks";
 import Sanity from "layouts/sanity";
 import SanityReport from "layouts/sanity/report";
 import SanitySummary from "layouts/sanity/summary";
+import SanityDetails from "layouts/sanity/details";
 import TestGenerator from "layouts/test-generator";
 import TestReports from "layouts/test-reports";
 
@@ -20,6 +21,7 @@ import TaskResults from "layouts/tasks/results.jsx";
 import ResultsSummary from "layouts/tasks/summary";
 import DataConsistencyChecker from "layouts/data-consistency";
 import ApiSanityChecker from "layouts/api-sanity";
+import ApiSanityDetails from "layouts/api-sanity/details";
 
 const routes = [
   {
@@ -139,6 +141,18 @@ const routes = [
     route: "/sanity/summary",
     component: <SanitySummary />,
     key: "sanity-summary",
+  },
+  {
+    type: "hidden",
+    route: "/sanity/:id",
+    component: <SanityDetails />,
+    key: "sanity-details",
+  },
+  {
+    type: "hidden",
+    route: "/api-sanity/:id",
+    component: <ApiSanityDetails />,
+    key: "api-sanity-details",
   },
 ];
 
