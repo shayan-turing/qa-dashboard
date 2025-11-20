@@ -46,14 +46,14 @@ const routes = [
     route: "/validate",
     component: <Validate />,
   },
-  {
-    type: "collapse",
-    name: "Tasks",
-    key: "tasks",
-    icon: <Icon fontSize="small">task_alt</Icon>,
-    route: "/tasks",
-    component: <Tasks />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Tasks",
+  //   key: "tasks",
+  //   icon: <Icon fontSize="small">task_alt</Icon>,
+  //   route: "/tasks",
+  //   component: <Tasks />,
+  // },
   {
     type: "collapse",
     name: "AI TestGen",
@@ -89,14 +89,14 @@ const routes = [
     component: <ApiSanityChecker />,
   },
 
-  {
-    type: "collapse",
-    name: "Data consistency",
-    key: "data-consistency",
-    icon: <Icon fontSize="small">fact_check</Icon>,
-    route: "/data-consistency",
-    component: <DataConsistencyChecker />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Data consistency",
+  //   key: "data-consistency",
+  //   icon: <Icon fontSize="small">fact_check</Icon>,
+  //   route: "/data-consistency",
+  //   component: <DataConsistencyChecker />,
+  // },
 
   {
     type: "hidden",
