@@ -72,6 +72,36 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(hours=1)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = datetime.timedelta(days=30)
 jwt = JWTManager(app)
 
+
+# ---------------------------------------------------------------
+# JWT Blacklist Support for Logout
+# ---------------------------------------------------------------
+
+app.config["JWT_BLACKLIST_ENABLED"] = True
+app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access", "refresh"]
+
+blacklist = set()
+
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    """Return True if token has been revoked."""
+    return jwt_payload["jti"] in blacklist
+
+
+@app.post("/auth/logout")
+@jwt_required()
+def logout():
+    """Blacklist the current JWT so it cannot be used again."""
+    jti = get_jwt()["jti"]
+    uid = get_jwt_identity()
+
+    blacklist.add(jti)
+
+    log_action(uid, "LOGOUT")
+
+    return jsonify({"message": "logged out"}), 200
+
+
 # Register API sanity check blueprint
 app.register_blueprint(sanity_bp)
 
