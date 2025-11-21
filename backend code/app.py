@@ -1328,80 +1328,170 @@ class SocketIOTee(io.TextIOBase):
 # ============================================================
 
 def stream_test_generation(folder_path: str, uid: str):
-    """Run test generation using generate_all_tests(), save outputs, and stream logs."""
+    """
+    Run test generation using generate_all_tests(), stream logs to SocketIO,
+    store artifacts (coverage, tests, logs), upload or save locally,
+    and persist a fully detailed testgen report in MongoDB.
+    """
     try:
-        # IMPORTANT: no self-import of 'app' here, to avoid recursion.
-        from testgen.testgen import generate_all_tests  # your generator entrypoint
+        from testgen.testgen import generate_all_tests  # avoid circular import
 
-        # Per-run working directory
+        # ---------------------------------------------------------
+        # 1. Create working directory for this testgen run
+        #---------------------------------------------------------
         work_dir = tempfile.mkdtemp(prefix=f"testgen_run_{uid}_")
         os.makedirs(work_dir, exist_ok=True)
 
-        socketio.emit("log_line", {"uid": uid, "line": ansi_to_html("Starting test generation...\n")})
+        socketio.emit("log_line", {
+            "uid": uid,
+            "line": ansi_to_html("Starting test generation...\n")
+        })
         log_action(uid, "testgen_started", meta={"folder_path": folder_path})
 
-        # Redirect stdout/stderr to tee (log file + live stream)
+        # ---------------------------------------------------------
+        # 2. Redirect stdout/stderr → log file + live SocketIO stream
+        #---------------------------------------------------------
         log_file_path = os.path.join(work_dir, "generation.log")
         with open(log_file_path, "w", encoding="utf-8", errors="ignore") as lf:
             old_stdout, old_stderr = sys.stdout, sys.stderr
             tee = SocketIOTee(uid, lf)
             sys.stdout = sys.stderr = tee
+
             try:
+                # Run the test generator
                 result = generate_all_tests(
                     base_path=folder_path,
                     run_tests=True,
                     interactive=False
                 )
             finally:
-                # Always restore stdio, then close tee
+                # Restore stdout/stderr and close tee
                 sys.stdout, sys.stderr = old_stdout, old_stderr
                 try:
                     tee.close()
                 except Exception:
                     pass
 
-        # Collect outputs into work_dir
+        # ---------------------------------------------------------
+        # 3. Copy output folders into work_dir
+        #---------------------------------------------------------
         run_dir = Path(result.get("run_dir"))
-        
-        folders = ["generated_tests", "coverage_html_report", "logs"]
-        for folder in folders:
+        for folder in ["generated_tests", "coverage_html_report", "logs"]:
             src = run_dir / folder
             dest = Path(work_dir) / folder
             if src.exists():
                 shutil.copytree(src, dest, dirs_exist_ok=True)
 
+        # ---------------------------------------------------------
+        # 4. Upload to GCS or save locally
+        #---------------------------------------------------------
+        timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        prefix = f"testgen_{timestamp}"
 
-        # Upload or local store
-        prefix = f"testgen_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
-        uploaded_urls, zip_url, storage_mode = upload_or_store_results(work_dir, uid, prefix)
+        uploaded_urls, zip_url, storage_mode = upload_or_store_results(
+            work_dir, uid, prefix
+        )
 
-        # Persist log
-        log_action(uid, "testgen_completed", meta={
-            "storage_mode": storage_mode,
+        # ---------------------------------------------------------
+        # 5. Extract metadata (tests, coverage %, exit code, etc.)
+        #---------------------------------------------------------
+        # Exit code from result
+        exit_code = (result or {}).get("exit_code", None)
+        tools_processed = (result or {}).get("tools_processed", None)
+
+        # Count test files
+        test_files = []
+        generated_tests_path = Path(work_dir) / "generated_tests"
+        if generated_tests_path.exists():
+            test_files = [str(p) for p in generated_tests_path.rglob("test_*.py")]
+
+        tests_generated = len(test_files)
+
+        # Extract coverage %
+        coverage_pct = None
+        coverage_folder = Path(work_dir) / "coverage_html_report"
+        coverage_index = coverage_folder / "index.html"
+        if coverage_index.exists():
+            try:
+                text = coverage_index.read_text(errors="ignore")
+                m = re.search(r"(\d+)%\s*coverage", text, re.IGNORECASE)
+                if m:
+                    coverage_pct = int(m.group(1))
+            except Exception:
+                coverage_pct = None
+
+        # Coverage UI link (local only)
+        coverage_url = None
+        if storage_mode == "local":
+            coverage_url = f"/coverage/{uid}/index.html"
+
+        # Log URL (local only)
+        log_url = None
+        if storage_mode == "local":
+            log_url = f"/downloads/{uid}/{prefix}/generation.log"
+
+        # ---------------------------------------------------------
+        # 6. Persist final testgen report in MongoDB
+        #---------------------------------------------------------
+        report_doc = {
+            "user_id": oid(uid),
+            "report_type": "testgen",
+            "status": "completed" if exit_code == 0 else "failed",
+            "exit_code": exit_code,
             "zip_url": zip_url,
-            "tools_processed": (result or {}).get("tools_processed", 0),
+            "log_url": log_url,
+            "coverage_url": coverage_url,
+            "storage_mode": storage_mode,
+            "tests_generated": tests_generated,
+            "tools_processed": tools_processed,
+            "coverage_pct": coverage_pct,
+            "source": folder_path,
+            "created_at": datetime.datetime.utcnow(),
+        }
+
+        db.reports.insert_one(report_doc)
+
+        log_action(uid, "testgen_completed", meta={
+            "zip_url": zip_url,
+            "storage_mode": storage_mode,
+            "exit_code": exit_code,
+            "tests_generated": tests_generated,
+            "coverage_pct": coverage_pct,
         })
 
-        # Send summary
-        socketio.emit("log_line", {"uid": uid, "line": ansi_to_html("\n--- TEST GENERATION SUMMARY ---\n")})
-        socketio.emit("log_line", {"uid": uid, "line": ansi_to_html(json.dumps(result or {}, indent=2) + "\n")})
+        # ---------------------------------------------------------
+        # 7. Emit final summary to client
+        #---------------------------------------------------------
+        socketio.emit("log_line", {
+            "uid": uid,
+            "line": ansi_to_html("\n--- TEST GENERATION SUMMARY ---\n")
+        })
+        socketio.emit("log_line", {
+            "uid": uid,
+            "line": ansi_to_html(json.dumps(result or {}, indent=2) + "\n")
+        })
+
         socketio.emit("log_done", {
             "uid": uid,
             "zip_url": zip_url,
+            "coverage_url": coverage_url,
             "storage_mode": storage_mode,
             "message": "<span style='color:#50fa7b'>✅ Test generation completed successfully.</span>"
         })
 
     except Exception as e:
         error_msg = f"Error during test generation: {e}"
+
         try:
             socketio.emit("log_error", {"uid": uid, "error": error_msg})
         except Exception:
             pass
+
         try:
             log_action(uid, "testgen_error", meta={"error": error_msg})
         except Exception:
             pass
+
 
 # ---------------------- Folder API ----------------------
 # ============================================================
