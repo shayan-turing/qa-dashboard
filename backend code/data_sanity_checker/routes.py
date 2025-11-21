@@ -1,3 +1,4 @@
+import traceback
 from flask import Blueprint, request, jsonify, session, send_file
 import tempfile
 import os
@@ -69,6 +70,7 @@ def upload_files():
 
         return jsonify({'success': True, 'files': file_names, 'mappings': mappings})
     except Exception as e:
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 
