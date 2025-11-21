@@ -239,8 +239,10 @@ export default function Reports() {
                         fullWidth
                         sx={{ mb: 2, justifyContent: "flex-start" }}
                       >
-                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                        {file1 ? file1.name : "Choose File"}
+                        <MDTypography variant="body2" fontWeight="small">
+                          <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                          {file1 ? file1.name : "Choose File"}
+                        </MDTypography>
                         <input
                           id="file1-input"
                           type="file"
@@ -264,8 +266,10 @@ export default function Reports() {
                         fullWidth
                         sx={{ mb: 2, justifyContent: "flex-start" }}
                       >
-                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                        {file2 ? file2.name : "Choose File"}
+                        <MDTypography variant="body2" fontWeight="small">
+                          <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                          {file1 ? file1.name : "Choose File"}
+                        </MDTypography>
                         <input
                           id="file2-input"
                           type="file"
@@ -331,7 +335,10 @@ export default function Reports() {
                     minHeight="200px"
                     flexDirection="column"
                   >
-                    <Icon fontSize="large" sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}>
+                    <Icon
+                      fontSize="large"
+                      sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}
+                    >
                       description
                     </Icon>
                     <MDTypography variant="body2" color="text">

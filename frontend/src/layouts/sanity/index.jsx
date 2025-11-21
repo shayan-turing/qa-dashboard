@@ -246,8 +246,10 @@ export default function Sanity() {
                         fullWidth
                         sx={{ mb: 3, justifyContent: "flex-start" }}
                       >
-                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                        {selectedFile ? selectedFile.name : "Choose ZIP File"}
+                        <MDTypography variant="body2" fontWeight="small">
+                          <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                          {selectedFile ? selectedFile.name : "Choose ZIP File"}
+                        </MDTypography>
                         <input
                           type="file"
                           hidden

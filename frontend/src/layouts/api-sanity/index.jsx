@@ -23,6 +23,11 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -47,6 +52,9 @@ export default function ApiSanityChecker() {
   // Reports list state
   const [reports, setReports] = useState([]);
   const [isLoadingReports, setIsLoadingReports] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
 
   // Filters for All APIs table
   const [filterInterface, setFilterInterface] = useState("__all__");
@@ -68,7 +76,6 @@ export default function ApiSanityChecker() {
   // Load reports on mount
   useEffect(() => {
     loadAllReports();
-    loadLastReport();
   }, []);
 
   const handleFileChange = (event) => {
@@ -125,7 +132,6 @@ export default function ApiSanityChecker() {
           severity: "success",
         });
         loadAllReports();
-        loadLastReport();
       } else {
         setToast({
           open: true,
@@ -164,34 +170,32 @@ export default function ApiSanityChecker() {
     }
   };
 
-  const loadLastReport = async () => {
-    try {
-      const res = await apiFetch("/api_sanity_check/reports");
-      const data = await res.json();
-      if (res.ok) {
-        const reportsList = Array.isArray(data) ? data : data.items || [];
-        if (reportsList.length > 0) {
-          setReportData(reportsList[0]);
-        }
-      }
-    } catch (err) {
-      console.error("Error loading last report:", err);
-    }
-  };
-
   const handleViewDetail = (reportId) => {
     navigate(`/api-sanity/${reportId}`);
   };
 
-  const handleDeleteReport = async (reportId) => {
-    if (!window.confirm("Are you sure you want to delete this report?")) {
-      return;
-    }
+  const handleDeleteReport = (reportId) => {
+    setReportToDelete(reportId);
+    setDeleteDialog(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    if (isDeleting) return;
+    setDeleteDialog(false);
+    setReportToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!reportToDelete) return;
+    setIsDeleting(true);
 
     try {
-      const res = await apiFetch(`/api_sanity_check/deletions/${reportId}/`, {
-        method: "DELETE",
-      });
+      const res = await apiFetch(
+        `/api_sanity_check/deletions/${reportToDelete}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (res.ok) {
         setToast({
@@ -200,10 +204,10 @@ export default function ApiSanityChecker() {
           severity: "success",
         });
         loadAllReports();
-        // Clear reportData if the deleted report is currently displayed
-        if (reportData && reportData._id === reportId) {
+        if (reportData && reportData._id === reportToDelete) {
           setReportData(null);
         }
+        handleCloseDeleteDialog();
       } else {
         const data = await res.json();
         setToast({
@@ -218,6 +222,8 @@ export default function ApiSanityChecker() {
         message: err.message || "Error deleting report",
         severity: "error",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -388,45 +394,50 @@ export default function ApiSanityChecker() {
                     folders
                   </MDTypography>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <Button
-                        variant="outlined"
-                        component="label"
-                        fullWidth
-                        sx={{ justifyContent: "flex-start" }}
-                      >
+                  <Grid xs={12} lg={6}>
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      fullWidth
+                      sx={{ justifyContent: "flex-start" }}
+                    >
+                      <MDTypography variant="body2" fontWeight="small">
                         <Icon sx={{ mr: 1 }}>upload_file</Icon>
                         {selectedFile ? selectedFile.name : "Choose ZIP File"}
-                        <input
-                          type="file"
-                          hidden
-                          accept=".zip"
-                          onChange={handleFileChange}
-                        />
-                      </Button>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <MDButton
-                        variant="gradient"
-                        color="info"
-                        fullWidth
-                        type="submit"
-                        disabled={isUploading}
-                      >
-                        <Icon sx={{ mr: 0.5 }}>play_arrow</Icon>
-                        {isUploading ? "Processing..." : "Run API Sanity Check"}
-                      </MDButton>
-                    </Grid>
-                    {isUploading && (
-                      <MDBox mt={2}>
-                        <LinearProgress />
-                        <MDTypography variant="caption" color="text" mt={1}>
-                          Processing API sanity check...
-                        </MDTypography>
-                      </MDBox>
-                    )}
+                      </MDTypography>
+                      <input
+                        type="file"
+                        hidden
+                        accept=".zip"
+                        onChange={handleFileChange}
+                      />
+                    </Button>
                   </Grid>
+
+                  <MDButton
+                    variant="gradient"
+                    color="info"
+                    type="submit"
+                    disabled={isUploading}
+                    sx={{
+                      mt: 3, 
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Icon sx={{ mr: 0.5 }}>play_arrow</Icon>
+                    {isUploading ? "Processing..." : "Run API Sanity Check"}
+                  </MDButton>
+
+                  {isUploading && (
+                    <MDBox mt={2}>
+                      <LinearProgress />
+                      <MDTypography variant="caption" color="text" mt={1}>
+                        Processing API sanity check...
+                      </MDTypography>
+                    </MDBox>
+                  )}
                 </Box>
               </MDBox>
             </Card>
@@ -1179,6 +1190,25 @@ export default function ApiSanityChecker() {
           </Grid>
         </Grid>
       </MDBox>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Delete Report</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this API Sanity report? This action
+            cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <MDButton onClick={handleCloseDeleteDialog} disabled={isDeleting}>
+            Cancel
+          </MDButton>
+          <MDButton color="error" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? "Deleting..." : "Delete"}
+          </MDButton>
+        </DialogActions>
+      </Dialog>
 
       {/* Toast Notification */}
       <Snackbar

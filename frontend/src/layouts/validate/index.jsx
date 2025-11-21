@@ -262,8 +262,10 @@ export default function Validate() {
                         fullWidth
                         sx={{ justifyContent: "flex-start" }}
                       >
-                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                        {excel ? excel.name : "Choose Excel File"}
+                        <MDTypography variant="body2" fontWeight="small">
+                          <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                          {excel ? excel.name : "Choose Excel File"}
+                        </MDTypography>
                         <input
                           id="excel-input"
                           type="file"
@@ -285,8 +287,10 @@ export default function Validate() {
                         fullWidth
                         sx={{ justifyContent: "flex-start" }}
                       >
-                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                        {doc ? doc.name : "Choose Document"}
+                        <MDTypography variant="body2" fontWeight="small">
+                          <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                          {doc ? doc.name : "Choose Document"}
+                        </MDTypography>
                         <input
                           id="doc-input"
                           type="file"
@@ -467,7 +471,10 @@ export default function Validate() {
                 minHeight="200px"
                 flexDirection="column"
               >
-                <Icon fontSize="large" sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}>
+                <Icon
+                  fontSize="large"
+                  sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}
+                >
                   fact_check
                 </Icon>
                 <MDTypography variant="body2" color="text">

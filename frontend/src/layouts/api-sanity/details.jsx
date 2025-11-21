@@ -150,7 +150,7 @@ export default function ApiSanityDetails() {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const res = await apiFetch(`/api_sanity_check/deletions/${id}/`, {
+      const res = await apiFetch(`/api_sanity_check/deletions/${id}`, {
         method: "DELETE",
       });
 
