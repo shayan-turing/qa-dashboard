@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 // @mui material components
 import Grid from "@mui/material/Grid";
@@ -9,18 +10,18 @@ import Button from "@mui/material/Button";
 import LinearProgress from "@mui/material/LinearProgress";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -30,26 +31,31 @@ import MDButton from "components/MDButton";
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
+import DataTable from "examples/Tables/DataTable";
 
 // Auth context
 import { useAuth } from "../../lib/auth";
 
 export default function ApiSanityChecker() {
   const { apiFetch } = useAuth();
+  const navigate = useNavigate();
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [reportData, setReportData] = useState(null);
+
+  // Reports list state
+  const [reports, setReports] = useState([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
 
   // Filters for All APIs table
   const [filterInterface, setFilterInterface] = useState("__all__");
   const [filterType, setFilterType] = useState("__all__");
   const [filterMatch, setFilterMatch] = useState("__all__");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Sorting state
-  const [sortKey, setSortKey] = useState(null);
-  const [sortDir, setSortDir] = useState("asc");
 
   // Toast state
   const [toast, setToast] = useState({
@@ -58,9 +64,9 @@ export default function ApiSanityChecker() {
     severity: "info",
   });
 
-  // Load last report on mount
+  // Load reports on mount
   useEffect(() => {
-    loadLastReport();
+    loadAllReports();
   }, []);
 
   const handleFileChange = (event) => {
@@ -116,7 +122,7 @@ export default function ApiSanityChecker() {
           message: "API Sanity Check completed successfully",
           severity: "success",
         });
-        loadLastReport();
+        loadAllReports();
       } else {
         setToast({
           open: true,
@@ -135,87 +141,81 @@ export default function ApiSanityChecker() {
     }
   };
 
-  const loadLastReport = async () => {
+  const loadAllReports = async () => {
+    setIsLoadingReports(true);
     try {
       const res = await apiFetch("/api_sanity_check/reports");
       const data = await res.json();
-      if (res.ok && data) {
-        setReportData(data);
+      if (res.ok) {
+        setReports(Array.isArray(data) ? data : data.items || []);
       }
     } catch (err) {
-      console.error("Error loading last report:", err);
-    }
-  };
-
-  const handleSort = (key) => {
-    if (sortKey === key) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
-
-  const getSortedFilteredApis = () => {
-    const results = reportData?.results || reportData || {};
-    if (!results.apis) return [];
-
-    let filtered = results.apis.filter((api) => {
-      const interfaceMatch =
-        filterInterface === "__all__" || api.interface === filterInterface;
-      const typeMatch =
-        filterType === "__all__" ||
-        (api.classification || "").toLowerCase() === filterType;
-      const matchStatus =
-        filterMatch === "__all__" ||
-        (filterMatch === "match" && api.param_match) ||
-        (filterMatch === "mismatch" && !api.param_match);
-
-      const query = searchQuery.toLowerCase();
-      const searchMatch =
-        !query ||
-        (api.api_name || "").toLowerCase().includes(query) ||
-        (api.interface || "").toLowerCase().includes(query) ||
-        (api.params || []).some((p) =>
-          (p.name || "").toLowerCase().includes(query)
-        );
-
-      return interfaceMatch && typeMatch && matchStatus && searchMatch;
-    });
-
-    if (sortKey) {
-      filtered.sort((a, b) => {
-        let aVal, bVal;
-        switch (sortKey) {
-          case "interface":
-            aVal = a.interface || "";
-            bVal = b.interface || "";
-            break;
-          case "api":
-            aVal = a.api_name || "";
-            bVal = b.api_name || "";
-            break;
-          case "type":
-            aVal = (a.classification || "").toUpperCase();
-            bVal = (b.classification || "").toUpperCase();
-            break;
-          case "match":
-            aVal = a.param_match ? 1 : 0;
-            bVal = b.param_match ? 1 : 0;
-            break;
-          default:
-            return 0;
-        }
-
-        const dir = sortDir === "asc" ? 1 : -1;
-        if (typeof aVal === "number" && typeof bVal === "number") {
-          return (aVal - bVal) * dir;
-        }
-        return String(aVal).localeCompare(String(bVal)) * dir;
+      console.error("Error loading reports:", err);
+      setToast({
+        open: true,
+        message: "Error loading reports",
+        severity: "error",
       });
+    } finally {
+      setIsLoadingReports(false);
     }
+  };
 
-    return filtered;
+  const handleViewDetail = (reportId) => {
+    navigate(`/api-sanity/${reportId}`);
+  };
+
+  const handleDeleteReport = (reportId) => {
+    setReportToDelete(reportId);
+    setDeleteDialog(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    if (isDeleting) return;
+    setDeleteDialog(false);
+    setReportToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!reportToDelete) return;
+    setIsDeleting(true);
+
+    try {
+      const res = await apiFetch(
+        `/api_sanity_check/deletions/${reportToDelete}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (res.ok) {
+        setToast({
+          open: true,
+          message: "Report deleted successfully",
+          severity: "success",
+        });
+        loadAllReports();
+        if (reportData && reportData._id === reportToDelete) {
+          setReportData(null);
+        }
+        handleCloseDeleteDialog();
+      } else {
+        const data = await res.json();
+        setToast({
+          open: true,
+          message: data.error || "Failed to delete report",
+          severity: "error",
+        });
+      }
+    } catch (err) {
+      setToast({
+        open: true,
+        message: err.message || "Error deleting report",
+        severity: "error",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const formatSignature = (api) => {
@@ -269,7 +269,319 @@ export default function ApiSanityChecker() {
   const comparison = results?.interface_file_yaml_comparison || {};
   const ifaceSummary = results?.summary?.interfaces || {};
 
-  const filteredApis = getSortedFilteredApis();
+  const filteredApis = useMemo(() => {
+    if (!results.apis) return [];
+
+    const query = searchQuery.toLowerCase();
+
+    return results.apis.filter((api) => {
+      const interfaceMatch =
+        filterInterface === "__all__" || api.interface === filterInterface;
+      const typeMatch =
+        filterType === "__all__" ||
+        (api.classification || "").toLowerCase() === filterType;
+      const matchStatus =
+        filterMatch === "__all__" ||
+        (filterMatch === "match" && api.param_match) ||
+        (filterMatch === "mismatch" && !api.param_match);
+
+      const searchMatch =
+        !query ||
+        (api.api_name || "").toLowerCase().includes(query) ||
+        (api.interface || "").toLowerCase().includes(query) ||
+        (api.params || []).some((p) =>
+          (p.name || "").toLowerCase().includes(query)
+        );
+
+      return interfaceMatch && typeMatch && matchStatus && searchMatch;
+    });
+  }, [results, filterInterface, filterType, filterMatch, searchQuery]);
+
+  const perInterfaceTable = useMemo(() => {
+    const columns = [
+      { Header: "Interface", accessor: "interface", width: "20%", align: "left" },
+      { Header: "Total APIs", accessor: "total", align: "center" },
+      { Header: "GET", accessor: "get", align: "center" },
+      { Header: "SET", accessor: "set", align: "center" },
+    ];
+
+    const rows = Object.keys(ifaceSummary)
+      .sort()
+      .map((iface) => {
+        const s = ifaceSummary[iface];
+        return {
+          interface: <Chip label={iface} size="small" variant="outlined" />,
+          total: (
+            <MDTypography variant="button" fontWeight="medium">
+              {s.total_apis}
+            </MDTypography>
+          ),
+          get: (
+            <MDBox display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+              <MDTypography variant="button" fontWeight="medium">
+                {s.get.count}
+              </MDTypography>
+              <MDTypography variant="caption" color="text">
+                ({s.get.percent?.toFixed(2)}%)
+              </MDTypography>
+            </MDBox>
+          ),
+          set: (
+            <MDBox display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+              <MDTypography variant="button" fontWeight="medium">
+                {s.set.count}
+              </MDTypography>
+              <MDTypography variant="caption" color="text">
+                ({s.set.percent?.toFixed(2)}%)
+              </MDTypography>
+            </MDBox>
+          ),
+        };
+      });
+
+    const hasData = rows.length > 0;
+
+    if (!hasData) {
+      rows.push({
+        interface: (
+          <MDTypography variant="caption" color="text">
+            No interface summary available
+          </MDTypography>
+        ),
+        total: "—",
+        get: "—",
+        set: "—",
+      });
+    }
+
+    return { table: { columns, rows }, hasData };
+  }, [ifaceSummary]);
+
+  const duplicatesTable = useMemo(() => {
+    const columns = [
+      { Header: "API Name", accessor: "apiName", width: "30%", align: "left" },
+      { Header: "Interfaces Involved", accessor: "interfaces", align: "left" },
+    ];
+
+    const rows = duplicates.map((dup) => ({
+      apiName: (
+        <Chip label={dup.api_name} size="small" color="warning" variant="outlined" />
+      ),
+      interfaces: (
+        <MDTypography variant="caption" color="text">
+          {(dup.interfaces_involved || []).join(", ")}
+        </MDTypography>
+      ),
+    }));
+
+    const hasData = rows.length > 0;
+
+    if (!hasData) {
+      rows.push({
+        apiName: (
+          <MDTypography variant="body2" color="success">
+            ✅ No duplicates found
+          </MDTypography>
+        ),
+        interfaces: "—",
+      });
+    }
+
+    return { table: { columns, rows }, hasData };
+  }, [duplicates]);
+
+  const comparisonTable = useMemo(() => {
+    const columns = [
+      { Header: "Interface", accessor: "interface", width: "18%", align: "left" },
+      { Header: "Files Count", accessor: "files", align: "center" },
+      { Header: "YAML Count", accessor: "yaml", align: "center" },
+      { Header: "Files not in YAML", accessor: "missing", align: "left" },
+      {
+        Header: "YAML entries missing files",
+        accessor: "extra",
+        align: "left",
+      },
+    ];
+
+    const formatList = (items = []) =>
+      items && items.length > 0 ? items.join(", ") : "—";
+
+    const rows = Object.keys(comparison)
+      .sort()
+      .map((iface) => {
+        const c = comparison[iface] || {};
+        return {
+          interface: <Chip label={iface} size="small" variant="outlined" />,
+          files: (
+            <MDTypography variant="button" fontWeight="medium">
+              {c.files_count ?? "—"}
+            </MDTypography>
+          ),
+          yaml: (
+            <MDTypography variant="button" fontWeight="medium">
+              {c.yaml_count ?? "—"}
+            </MDTypography>
+          ),
+          missing: (
+            <MDTypography variant="caption" color="text">
+              {formatList(c.missing_in_yaml)}
+            </MDTypography>
+          ),
+          extra: (
+            <MDTypography variant="caption" color="text">
+              {formatList(c.extra_in_yaml)}
+            </MDTypography>
+          ),
+        };
+      });
+
+    const hasData = rows.length > 0;
+
+    if (!hasData) {
+      rows.push({
+        interface: (
+          <MDTypography variant="caption" color="text">
+            No comparison data available
+          </MDTypography>
+        ),
+        files: "—",
+        yaml: "—",
+        missing: "—",
+        extra: "—",
+      });
+    }
+
+    return { table: { columns, rows }, hasData };
+  }, [comparison]);
+
+  const apisTable = useMemo(() => {
+    const columns = [
+      {
+        Header: "Interface",
+        accessor: "interface",
+        width: "12%",
+        align: "left",
+        Cell: ({ value }) => value?.content || value?.raw || "—",
+        sortType: (rowA, rowB) =>
+          (rowA.original.interface?.raw || "").localeCompare(
+            rowB.original.interface?.raw || ""
+          ),
+      },
+      {
+        Header: "API Signature",
+        accessor: "signature",
+        width: "30%",
+        align: "left",
+        Cell: ({ value }) => value?.content || value?.raw || "—",
+        sortType: (rowA, rowB) =>
+          (rowA.original.signature?.raw || "").localeCompare(
+            rowB.original.signature?.raw || ""
+          ),
+      },
+      {
+        Header: "Type",
+        accessor: "type",
+        align: "center",
+        Cell: ({ value }) => value?.content || value?.raw || "—",
+        sortType: (rowA, rowB) =>
+          (rowA.original.type?.raw || "").localeCompare(
+            rowB.original.type?.raw || ""
+          ),
+      },
+      {
+        Header: "Params Match",
+        accessor: "match",
+        align: "center",
+        Cell: ({ value }) => value?.content || value?.raw || "—",
+        sortType: (rowA, rowB) =>
+          (rowA.original.match?.raw || 0) - (rowB.original.match?.raw || 0),
+      },
+      {
+        Header: "Details",
+        accessor: "details",
+        width: "30%",
+        align: "left",
+        Cell: ({ value }) => (
+          <MDTypography variant="caption" color="text">
+            {value}
+          </MDTypography>
+        ),
+      },
+    ];
+
+    const rows = filteredApis.map((api) => {
+      const signatureText = formatSignature(api);
+      const classification = (api.classification || "").toUpperCase();
+      const typeColor = classification === "GET" ? "success" : "warning";
+
+      return {
+        interface: {
+          raw: api.interface || "",
+          content: (
+            <Chip label={api.interface} size="small" variant="outlined" />
+          ),
+        },
+        signature: {
+          raw: signatureText,
+          content: (
+            <MDTypography
+              variant="caption"
+              component="code"
+              sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
+            >
+              {signatureText}
+            </MDTypography>
+          ),
+        },
+        type: {
+          raw: classification,
+          content: (
+            <Chip label={classification || "N/A"} size="small" color={typeColor} />
+          ),
+        },
+        match: {
+          raw: api.param_match ? 1 : 0,
+          content: api.param_match ? (
+            <Chip
+              icon={<Icon fontSize="small">check_circle</Icon>}
+              label="Match"
+              size="small"
+              color="success"
+            />
+          ) : (
+            <Chip
+              icon={<Icon fontSize="small">cancel</Icon>}
+              label="Mismatch"
+              size="small"
+              color="error"
+            />
+          ),
+        },
+        details: renderMismatchDetails(api),
+      };
+    });
+
+    const hasData = rows.length > 0;
+
+    if (!hasData) {
+      rows.push({
+        interface: {
+          raw: "",
+          content: (
+            <MDTypography variant="body2" color="text">
+              No APIs match the filters
+            </MDTypography>
+          ),
+        },
+        signature: { raw: "", content: "—" },
+        type: { raw: "", content: "—" },
+        match: { raw: 0, content: "—" },
+        details: "—",
+      });
+    }
+
+    return { table: { columns, rows }, hasData };
+  }, [filteredApis]);
 
   return (
     <DashboardLayout>
@@ -284,18 +596,7 @@ export default function ApiSanityChecker() {
               alignItems="center"
             >
               <MDTypography variant="h4" fontWeight="medium">
-                <Icon
-                  sx={{
-                    verticalAlign: "middle",
-                    mr: 1,
-                    background:
-                      "linear-gradient(135deg, #00d4ff 0%, #00ff88 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  api
-                </Icon>
+                <Icon sx={{ verticalAlign: "middle", mr: 1 }}>api</Icon>
                 API Sanity Check Report
               </MDTypography>
             </MDBox>
@@ -325,45 +626,50 @@ export default function ApiSanityChecker() {
                     folders
                   </MDTypography>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <Button
-                        variant="outlined"
-                        component="label"
-                        fullWidth
-                        sx={{ justifyContent: "flex-start" }}
-                      >
+                  <Grid xs={12} lg={6}>
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      fullWidth
+                      sx={{ justifyContent: "flex-start" }}
+                    >
+                      <MDTypography variant="body2" fontWeight="small">
                         <Icon sx={{ mr: 1 }}>upload_file</Icon>
                         {selectedFile ? selectedFile.name : "Choose ZIP File"}
-                        <input
-                          type="file"
-                          hidden
-                          accept=".zip"
-                          onChange={handleFileChange}
-                        />
-                      </Button>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <MDButton
-                        variant="gradient"
-                        color="info"
-                        fullWidth
-                        type="submit"
-                        disabled={isUploading}
-                      >
-                        <Icon sx={{ mr: 0.5 }}>play_arrow</Icon>
-                        {isUploading ? "Processing..." : "Run API Sanity Check"}
-                      </MDButton>
-                    </Grid>
-                    {isUploading && (
-                      <MDBox mt={2}>
-                        <LinearProgress />
-                        <MDTypography variant="caption" color="text" mt={1}>
-                          Processing API sanity check...
-                        </MDTypography>
-                      </MDBox>
-                    )}
+                      </MDTypography>
+                      <input
+                        type="file"
+                        hidden
+                        accept=".zip"
+                        onChange={handleFileChange}
+                      />
+                    </Button>
                   </Grid>
+
+                  <MDButton
+                    variant="gradient"
+                    color="info"
+                    type="submit"
+                    disabled={isUploading}
+                    sx={{
+                      mt: 3, 
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Icon sx={{ mr: 0.5 }}>play_arrow</Icon>
+                    {isUploading ? "Processing..." : "Run API Sanity Check"}
+                  </MDButton>
+
+                  {isUploading && (
+                    <MDBox mt={2}>
+                      <LinearProgress />
+                      <MDTypography variant="caption" color="text" mt={1}>
+                        Processing API sanity check...
+                      </MDTypography>
+                    </MDBox>
+                  )}
                 </Box>
               </MDBox>
             </Card>
@@ -449,64 +755,14 @@ export default function ApiSanityChecker() {
                       Counts and percentages of GET/SET per interface (from
                       YAML)
                     </MDTypography>
-                    <TableContainer>
-                      <Table>
-                        <TableHead sx={{ backgroundColor: "action.hover" }}>
-                          <TableRow>
-                            <TableCell>Interface</TableCell>
-                            <TableCell>Total APIs</TableCell>
-                            <TableCell>GET</TableCell>
-                            <TableCell>SET</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {Object.keys(ifaceSummary)
-                            .sort()
-                            .map((iface) => {
-                              const s = ifaceSummary[iface];
-                              return (
-                                <TableRow key={iface} hover>
-                                  <TableCell>
-                                    <Chip
-                                      label={iface}
-                                      size="small"
-                                      variant="outlined"
-                                    />
-                                  </TableCell>
-                                  <TableCell>{s.total_apis}</TableCell>
-                                  <TableCell>
-                                    {s.get.count}{" "}
-                                    <MDTypography
-                                      variant="caption"
-                                      color="text"
-                                    >
-                                      ({s.get.percent?.toFixed(2)}%)
-                                    </MDTypography>
-                                  </TableCell>
-                                  <TableCell>
-                                    {s.set.count}{" "}
-                                    <MDTypography
-                                      variant="caption"
-                                      color="text"
-                                    >
-                                      ({s.set.percent?.toFixed(2)}%)
-                                    </MDTypography>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          {Object.keys(ifaceSummary).length === 0 && (
-                            <TableRow>
-                              <TableCell colSpan={4} align="center">
-                                <MDTypography variant="caption" color="text">
-                                  No data available
-                                </MDTypography>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                    <DataTable
+                      table={perInterfaceTable.table}
+                      entriesPerPage={{ defaultValue: 8, entries: [5, 8, 15, 25, 50] }}
+                      canSearch={false}
+                      showTotalEntries={perInterfaceTable.hasData}
+                      isSorted={false}
+                      noEndBorder
+                    />
                   </MDBox>
                 </Card>
               </Grid>
@@ -532,42 +788,14 @@ export default function ApiSanityChecker() {
                     >
                       Same API name appearing in 2+ interfaces (from YAML)
                     </MDTypography>
-                    <TableContainer>
-                      <Table>
-                        <TableHead sx={{ backgroundColor: "action.hover" }}>
-                          <TableRow>
-                            <TableCell>API Name</TableCell>
-                            <TableCell>Interfaces Involved</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {duplicates.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={2}>
-                                <MDTypography variant="body2" color="success">
-                                  ✅ No duplicates found
-                                </MDTypography>
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            duplicates.map((dup, idx) => (
-                              <TableRow key={idx} hover>
-                                <TableCell>
-                                  <Chip
-                                    label={dup.api_name}
-                                    size="small"
-                                    color="warning"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  {(dup.interfaces_involved || []).join(", ")}
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                    <DataTable
+                      table={duplicatesTable.table}
+                      entriesPerPage={false}
+                      canSearch={false}
+                      showTotalEntries={false}
+                      isSorted={false}
+                      noEndBorder
+                    />
                   </MDBox>
                 </Card>
               </Grid>
@@ -593,60 +821,14 @@ export default function ApiSanityChecker() {
                     >
                       Files in interface folders vs entries in get_set_APIs.yaml
                     </MDTypography>
-                    <TableContainer>
-                      <Table>
-                        <TableHead sx={{ backgroundColor: "action.hover" }}>
-                          <TableRow>
-                            <TableCell>Interface</TableCell>
-                            <TableCell>Files Count</TableCell>
-                            <TableCell>YAML Count</TableCell>
-                            <TableCell>Files not in YAML</TableCell>
-                            <TableCell>YAML entries missing files</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {Object.keys(comparison)
-                            .sort()
-                            .map((iface) => {
-                              const c = comparison[iface];
-                              return (
-                                <TableRow key={iface} hover>
-                                  <TableCell>
-                                    <Chip
-                                      label={iface}
-                                      size="small"
-                                      variant="outlined"
-                                    />
-                                  </TableCell>
-                                  <TableCell>{c.files_count}</TableCell>
-                                  <TableCell>{c.yaml_count}</TableCell>
-                                  <TableCell>
-                                    {c.missing_in_yaml &&
-                                    c.missing_in_yaml.length > 0
-                                      ? c.missing_in_yaml.join(", ")
-                                      : "—"}
-                                  </TableCell>
-                                  <TableCell>
-                                    {c.extra_in_yaml &&
-                                    c.extra_in_yaml.length > 0
-                                      ? c.extra_in_yaml.join(", ")
-                                      : "—"}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          {Object.keys(comparison).length === 0 && (
-                            <TableRow>
-                              <TableCell colSpan={5} align="center">
-                                <MDTypography variant="caption" color="text">
-                                  No data available
-                                </MDTypography>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                    <DataTable
+                      table={comparisonTable.table}
+                      entriesPerPage={{ defaultValue: 10, entries: [5, 10, 20, 50] }}
+                      canSearch={false}
+                      showTotalEntries={comparisonTable.hasData}
+                      isSorted={false}
+                      noEndBorder
+                    />
                   </MDBox>
                 </Card>
               </Grid>
@@ -674,6 +856,7 @@ export default function ApiSanityChecker() {
                             value={filterInterface}
                             label="Interface"
                             onChange={(e) => setFilterInterface(e.target.value)}
+                            sx={{height:40}}
                           >
                             <MenuItem value="__all__">All</MenuItem>
                             {interfaces.sort().map((iface) => (
@@ -691,6 +874,7 @@ export default function ApiSanityChecker() {
                             value={filterType}
                             label="Type"
                             onChange={(e) => setFilterType(e.target.value)}
+                             sx={{height:40}}
                           >
                             <MenuItem value="__all__">All</MenuItem>
                             <MenuItem value="get">GET</MenuItem>
@@ -705,6 +889,7 @@ export default function ApiSanityChecker() {
                             value={filterMatch}
                             label="Match"
                             onChange={(e) => setFilterMatch(e.target.value)}
+                             sx={{height:40}}
                           >
                             <MenuItem value="__all__">All</MenuItem>
                             <MenuItem value="match">Match</MenuItem>
@@ -727,128 +912,17 @@ export default function ApiSanityChecker() {
                       </Grid>
                     </Grid>
 
-                    {/* APIs Table */}
-                    <TableContainer sx={{ maxHeight: 600 }}>
-                      <Table stickyHeader>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell
-                              sx={{ cursor: "pointer", fontWeight: "bold" }}
-                              onClick={() => handleSort("interface")}
-                            >
-                              Interface{" "}
-                              {sortKey === "interface" &&
-                                (sortDir === "asc" ? "▲" : "▼")}
-                            </TableCell>
-                            <TableCell
-                              sx={{ cursor: "pointer", fontWeight: "bold" }}
-                              onClick={() => handleSort("api")}
-                            >
-                              API Signature{" "}
-                              {sortKey === "api" &&
-                                (sortDir === "asc" ? "▲" : "▼")}
-                            </TableCell>
-                            <TableCell
-                              sx={{ cursor: "pointer", fontWeight: "bold" }}
-                              onClick={() => handleSort("type")}
-                            >
-                              Type{" "}
-                              {sortKey === "type" &&
-                                (sortDir === "asc" ? "▲" : "▼")}
-                            </TableCell>
-                            <TableCell
-                              sx={{ cursor: "pointer", fontWeight: "bold" }}
-                              onClick={() => handleSort("match")}
-                            >
-                              Params Match{" "}
-                              {sortKey === "match" &&
-                                (sortDir === "asc" ? "▲" : "▼")}
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: "bold" }}>
-                              Details
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {filteredApis.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={5} align="center">
-                                <MDTypography variant="body2" color="text">
-                                  No APIs match the filters
-                                </MDTypography>
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            filteredApis.map((api, idx) => (
-                              <TableRow key={idx} hover>
-                                <TableCell>
-                                  <Chip
-                                    label={api.interface}
-                                    size="small"
-                                    variant="outlined"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <MDTypography
-                                    variant="caption"
-                                    component="code"
-                                    sx={{
-                                      fontFamily: "monospace",
-                                      fontSize: "0.75rem",
-                                    }}
-                                  >
-                                    {formatSignature(api)}
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell>
-                                  <Chip
-                                    label={(
-                                      api.classification || ""
-                                    ).toUpperCase()}
-                                    size="small"
-                                    color={
-                                      (
-                                        api.classification || ""
-                                      ).toLowerCase() === "get"
-                                        ? "success"
-                                        : "warning"
-                                    }
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  {api.param_match ? (
-                                    <Chip
-                                      icon={
-                                        <Icon fontSize="small">
-                                          check_circle
-                                        </Icon>
-                                      }
-                                      label="Match"
-                                      size="small"
-                                      color="success"
-                                    />
-                                  ) : (
-                                    <Chip
-                                      icon={
-                                        <Icon fontSize="small">cancel</Icon>
-                                      }
-                                      label="Mismatch"
-                                      size="small"
-                                      color="error"
-                                    />
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <MDTypography variant="caption" color="text">
-                                    {renderMismatchDetails(api)}
-                                  </MDTypography>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                    <DataTable
+                      table={apisTable.table}
+                      entriesPerPage={{
+                        defaultValue: 10,
+                        entries: [5, 10, 25, 50, 100],
+                      }}
+                      canSearch={false}
+                      showTotalEntries={apisTable.hasData}
+                      pagination={{ variant: "gradient", color: "info" }}
+                      noEndBorder
+                    />
 
                     <MDBox mt={2}>
                       <MDTypography variant="caption" color="text">
@@ -861,8 +935,145 @@ export default function ApiSanityChecker() {
               </Grid>
             </>
           )}
+
+          {/* All Reports Section */}
+          <Grid item xs={12}>
+            <Card>
+              <MDBox p={3}>
+                <MDTypography variant="h5" fontWeight="medium" mb={3}>
+                  API Sanity Reports
+                </MDTypography>
+                {isLoadingReports ? (
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <CircularProgress size={60} thickness={4} />
+                    <MDTypography variant="body2" color="text" mt={2}>
+                      Loading reports...
+                    </MDTypography>
+                  </MDBox>
+                ) : reports.length === 0 ? (
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <Icon
+                      fontSize="large"
+                      sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}
+                    >
+                      api
+                    </Icon>
+                    <MDTypography variant="body2" color="text">
+                      No API sanity reports yet.
+                    </MDTypography>
+                  </MDBox>
+                ) : (
+                  <Grid container spacing={2}>
+                    {reports.map((report) => (
+                      <Grid item xs={12} md={6} lg={4} key={report._id}>
+                        <Card variant="outlined">
+                          <MDBox p={2}>
+                            <MDTypography
+                              variant="h6"
+                              fontWeight="medium"
+                              mb={1}
+                            >
+                              {report.title || "API Sanity Report"}
+                            </MDTypography>
+                            <MDTypography
+                              variant="caption"
+                              color="text"
+                              display="block"
+                              mb={1}
+                            >
+                              {report.created_at
+                                ? new Date(report.created_at).toLocaleString()
+                                : ""}
+                            </MDTypography>
+                            {report.results?.summary?.overall && (
+                              <MDBox mb={2}>
+                                <MDTypography
+                                  variant="caption"
+                                  color="text"
+                                  display="block"
+                                >
+                                  <strong>Total APIs:</strong>{" "}
+                                  {report.results.summary.overall.total_apis ||
+                                    0}
+                                </MDTypography>
+                                <MDTypography
+                                  variant="caption"
+                                  color="text"
+                                  display="block"
+                                >
+                                  <strong>GET:</strong>{" "}
+                                  {report.results.summary.overall.get?.count ||
+                                    0}{" "}
+                                  • <strong>SET:</strong>{" "}
+                                  {report.results.summary.overall.set?.count ||
+                                    0}
+                                </MDTypography>
+                              </MDBox>
+                            )}
+                            <MDBox display="flex" gap={1}>
+                              <MDButton
+                                variant="gradient"
+                                color="info"
+                                size="small"
+                                fullWidth
+                                onClick={() => handleViewDetail(report._id)}
+                              >
+                                <Icon sx={{ mr: 0.5 }}>visibility</Icon>
+                                View Detail
+                              </MDButton>
+                              <MDButton
+                                variant="gradient"
+                                color="error"
+                                size="small"
+                                fullWidth
+                                onClick={() => handleDeleteReport(report._id)}
+                              >
+                                <Icon sx={{ mr: 0.5 }}>delete</Icon>
+                                Delete
+                              </MDButton>
+                            </MDBox>
+                          </MDBox>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                )}
+              </MDBox>
+            </Card>
+          </Grid>
         </Grid>
       </MDBox>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Delete Report</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this API Sanity report? This action
+            cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <MDButton onClick={handleCloseDeleteDialog} disabled={isDeleting}>
+            Cancel
+          </MDButton>
+          <MDButton color="error" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? "Deleting..." : "Delete"}
+          </MDButton>
+        </DialogActions>
+      </Dialog>
 
       {/* Toast Notification */}
       <Snackbar

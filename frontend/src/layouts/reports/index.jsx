@@ -22,6 +22,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Icon from "@mui/material/Icon";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -238,8 +239,10 @@ export default function Reports() {
                         fullWidth
                         sx={{ mb: 2, justifyContent: "flex-start" }}
                       >
-                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                        {file1 ? file1.name : "Choose File"}
+                        <MDTypography variant="body2" fontWeight="small">
+                          <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                          {file1 ? file1.name : "Choose File"}
+                        </MDTypography>
                         <input
                           id="file1-input"
                           type="file"
@@ -263,8 +266,10 @@ export default function Reports() {
                         fullWidth
                         sx={{ mb: 2, justifyContent: "flex-start" }}
                       >
-                        <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                        {file2 ? file2.name : "Choose File"}
+                        <MDTypography variant="body2" fontWeight="small">
+                          <Icon sx={{ mr: 1 }}>upload_file</Icon>
+                          {file1 ? file1.name : "Choose File"}
+                        </MDTypography>
                         <input
                           id="file2-input"
                           type="file"
@@ -310,13 +315,36 @@ export default function Reports() {
                 </MDTypography>
 
                 {loading ? (
-                  <MDTypography variant="body2" color="text">
-                    Loading reports...
-                  </MDTypography>
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <CircularProgress size={60} thickness={4} />
+                    <MDTypography variant="body2" color="text" mt={2}>
+                      Loading reports...
+                    </MDTypography>
+                  </MDBox>
                 ) : items.length === 0 ? (
-                  <MDTypography variant="body2" color="text">
-                    No reports yet.
-                  </MDTypography>
+                  <MDBox
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                    flexDirection="column"
+                  >
+                    <Icon
+                      fontSize="large"
+                      sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}
+                    >
+                      description
+                    </Icon>
+                    <MDTypography variant="body2" color="text">
+                      No reports yet.
+                    </MDTypography>
+                  </MDBox>
                 ) : (
                   <Grid container spacing={2}>
                     {items.map((r) => {
