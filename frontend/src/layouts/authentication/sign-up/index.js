@@ -86,7 +86,13 @@ function Singup() {
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={togglePassword} edge="end" size="small">
+                      <IconButton
+                        onClick={togglePassword}
+                        edge="end"
+                        size="small"
+                        variant="outlined"
+                        color="info"
+                      >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -123,10 +129,20 @@ function Singup() {
               </MDBox>
             )}
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={isLoading}>
+              <MDButton
+                variant="gradient"
+                color="info"
+                fullWidth
+                type="submit"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
-                    <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+                    <CircularProgress
+                      size={18}
+                      color="inherit"
+                      sx={{ mr: 1 }}
+                    />
                     Registering...
                   </>
                 ) : (
