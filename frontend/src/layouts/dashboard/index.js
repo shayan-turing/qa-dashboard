@@ -408,35 +408,7 @@ function Dashboard() {
     ];
   }, [sales.datasets.data, tasks.datasets.data]);
 
-  const workloads = useMemo(
-    () => [
-      {
-        label: "Regression Suites",
-        value: 78,
-        detail: "Next run scheduled in 2h",
-        color: "info",
-      },
-      {
-        label: "Contract Testing",
-        value: 62,
-        detail: "12 APIs awaiting schema updates",
-        color: "success",
-      },
-      {
-        label: "Performance & Load",
-        value: 45,
-        detail: "Targeting 10k RPS benchmark",
-        color: "warning",
-      },
-      {
-        label: "Bug Fix & Triage",
-        value: 32,
-        detail: "5 hotfixes shipping today",
-        color: "error",
-      },
-    ],
-    []
-  );
+
 
 
 

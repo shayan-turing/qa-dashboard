@@ -18,7 +18,6 @@ import Alert from "@mui/material/Alert";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Icon from "@mui/material/Icon";
 import Box from "@mui/material/Box";
@@ -58,11 +57,10 @@ export default function Reports() {
     severity: "info",
   });
 
-  // Modal state
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    onConfirm: null,
-  });
+  // Delete dialog state
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 📥 Load reports
   const loadReports = useCallback(async () => {
@@ -149,37 +147,46 @@ export default function Reports() {
   };
 
   // 🗑️ Delete report
-  const remove = async (id) => {
-    setConfirmDialog({
-      open: true,
-      onConfirm: async () => {
-        try {
-          const res = await apiFetch(`/reports/${id}`, { method: "DELETE" });
-          const data = await res.json();
-          if (res.ok) {
-            setToast({
-              open: true,
-              message: "Report deleted",
-              severity: "success",
-            });
-            setItems(items.filter((x) => (x._id || x.id) !== id));
-          } else {
-            setToast({
-              open: true,
-              message: data.error || "Delete failed",
-              severity: "error",
-            });
-          }
-        } catch {
-          setToast({
-            open: true,
-            message: "Network error deleting report",
-            severity: "error",
-          });
-        }
-        setConfirmDialog({ open: false, onConfirm: null });
-      },
-    });
+  const openDeleteDialog = (id) => {
+    setReportToDelete(id);
+    setDeleteDialog(true);
+  };
+
+  const handleDelete = async () => {
+    if (!reportToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await apiFetch(`/reports/${reportToDelete}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setToast({
+          open: true,
+          message: "Report deleted",
+          severity: "success",
+        });
+        setItems((prev) =>
+          prev.filter((x) => (x._id || x.id) !== reportToDelete)
+        );
+      } else {
+        setToast({
+          open: true,
+          message: data.error || "Delete failed",
+          severity: "error",
+        });
+      }
+    } catch {
+      setToast({
+        open: true,
+        message: "Network error deleting report",
+        severity: "error",
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialog(false);
+      setReportToDelete(null);
+    }
   };
 
   return (
@@ -191,7 +198,7 @@ export default function Reports() {
           <Grid item xs={12}>
             <MDTypography variant="h4" fontWeight="medium">
               <Icon sx={{ verticalAlign: "middle", mr: 1 }}>assessment</Icon>
-              Reports Dashboard
+              Reports Dashboard(Expert SOP Vs Technical Doc)
             </MDTypography>
           </Grid>
 
@@ -231,7 +238,7 @@ export default function Reports() {
                     {/* Upload 1 */}
                     <Grid item xs={12} lg={6}>
                       <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                        Upload Document 1
+                        Expert Document
                       </MDTypography>
                       <Button
                         variant="outlined"
@@ -241,7 +248,7 @@ export default function Reports() {
                       >
                         <MDTypography variant="body2" fontWeight="small">
                           <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                          {file1 ? file1.name : "Choose File"}
+                          {file1 ? file1.name : "Choose File(txt,docx,pdf,md)"}
                         </MDTypography>
                         <input
                           id="file1-input"
@@ -258,7 +265,7 @@ export default function Reports() {
                     {/* Upload 2 */}
                     <Grid item xs={12} lg={6}>
                       <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                        Upload Document 2
+                        Techincal Document
                       </MDTypography>
                       <Button
                         variant="outlined"
@@ -268,7 +275,7 @@ export default function Reports() {
                       >
                         <MDTypography variant="body2" fontWeight="small">
                           <Icon sx={{ mr: 1 }}>upload_file</Icon>
-                          {file1 ? file1.name : "Choose File"}
+                          {file2 ? file2.name : "Choose File(txt,docx,pdf,md)"}
                         </MDTypography>
                         <input
                           id="file2-input"
@@ -400,7 +407,7 @@ export default function Reports() {
                                   variant="gradient"
                                   color="error"
                                   size="small"
-                                  onClick={() => remove(id)}
+                                  onClick={() => openDeleteDialog(id)}
                                 >
                                   <Icon sx={{ mr: 0.5 }}>delete</Icon>
                                   Delete
@@ -435,28 +442,28 @@ export default function Reports() {
         </Alert>
       </Snackbar>
 
-      {/* Confirmation Dialog */}
+      {/* Delete Confirmation Dialog */}
       <Dialog
-        open={confirmDialog.open}
-        onClose={() => setConfirmDialog({ open: false, onConfirm: null })}
+        open={deleteDialog}
+        onClose={() => !isDeleting && setDeleteDialog(false)}
       >
-        <DialogTitle>Delete Report?</DialogTitle>
+        <DialogTitle color="primary">Delete Report</DialogTitle>
         <DialogContent>
-          <DialogContentText>This action cannot be undone.</DialogContentText>
+          <MDTypography variant="h5" color="primary">
+            Are you sure you want to delete this API Sanity report? This action
+            cannot be undone.
+          </MDTypography>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setConfirmDialog({ open: false, onConfirm: null })}
+          <MDButton
+            onClick={() => setDeleteDialog(false)}
+            disabled={isDeleting}
           >
             Cancel
-          </Button>
-          <Button
-            onClick={confirmDialog.onConfirm}
-            color="error"
-            variant="contained"
-          >
-            Delete
-          </Button>
+          </MDButton>
+          <MDButton color="error" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? "Deleting..." : "Delete"}
+          </MDButton>
         </DialogActions>
       </Dialog>
     </DashboardLayout>

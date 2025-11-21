@@ -1100,12 +1100,12 @@ export default function ApiSanityChecker() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Delete Report</DialogTitle>
+        <DialogTitle color="primary" >Delete Report</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <MDTypography variant="h5"  color="primary">
             Are you sure you want to delete this API Sanity report? This action
             cannot be undone.
-          </DialogContentText>
+          </MDTypography>
         </DialogContent>
         <DialogActions>
           <MDButton onClick={handleCloseDeleteDialog} disabled={isDeleting}>

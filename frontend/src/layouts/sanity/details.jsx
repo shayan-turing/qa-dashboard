@@ -19,7 +19,6 @@ import Divider from "@mui/material/Divider";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
 // Material Dashboard 2 React components
@@ -792,12 +791,12 @@ export default function SanityDetails() {
         open={deleteDialog}
         onClose={() => !isDeleting && setDeleteDialog(false)}
       >
-        <DialogTitle>Delete Report</DialogTitle>
+        <DialogTitle color="primary">Delete Report</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <MDTypography variant="h5" color="primary">
             Are you sure you want to delete this DB Sanity report? This action
             cannot be undone.
-          </DialogContentText>
+          </MDTypography>
         </DialogContent>
         <DialogActions>
           <MDButton

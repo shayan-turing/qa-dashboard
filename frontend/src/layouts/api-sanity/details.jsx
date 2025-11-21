@@ -190,21 +190,33 @@ export default function ApiSanityDetails() {
 
   const summaryTable = useMemo(() => {
     const columns = [
-      { Header: "Interface", accessor: "interface", width: "20%", align: "left" },
+      {
+        Header: "Interface",
+        accessor: "interface",
+        width: "20%",
+        align: "left",
+      },
       { Header: "Total APIs", accessor: "total", align: "center" },
       { Header: "GET", accessor: "get", align: "center" },
       { Header: "SET", accessor: "set", align: "center" },
     ];
 
     const rows = Object.entries(summaryInterfaces).map(([iface, data]) => ({
-      interface: <Chip label={iface} size="small" color="primary" variant="outlined" />,
+      interface: (
+        <Chip label={iface} size="small" color="primary" variant="outlined" />
+      ),
       total: (
         <MDTypography variant="button" fontWeight="medium">
           {data.total_apis || data.total || 0}
         </MDTypography>
       ),
       get: (
-        <MDBox display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+        <MDBox
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          gap={0.5}
+        >
           <MDTypography variant="button" fontWeight="medium">
             {data.get?.count || 0}
           </MDTypography>
@@ -214,7 +226,12 @@ export default function ApiSanityDetails() {
         </MDBox>
       ),
       set: (
-        <MDBox display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+        <MDBox
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          gap={0.5}
+        >
           <MDTypography variant="button" fontWeight="medium">
             {data.set?.count || 0}
           </MDTypography>
@@ -264,7 +281,11 @@ export default function ApiSanityDetails() {
             <Chip
               label={api.classification?.toUpperCase() || "N/A"}
               size="small"
-              color={(api.classification || "").toLowerCase() === "get" ? "info" : "warning"}
+              color={
+                (api.classification || "").toLowerCase() === "get"
+                  ? "info"
+                  : "warning"
+              }
             />
           ),
           match: api.param_match ? (
@@ -327,9 +348,20 @@ export default function ApiSanityDetails() {
             {api.api_name}
           </MDTypography>
         ),
-        interface: <Chip label={api.interface} size="small" color="primary" variant="outlined" />,
+        interface: (
+          <Chip
+            label={api.interface}
+            size="small"
+            color="primary"
+            variant="outlined"
+          />
+        ),
         type: (
-          <Chip label={classification || "N/A"} size="small" color={classification === "GET" ? "info" : "warning"} />
+          <Chip
+            label={classification || "N/A"}
+            size="small"
+            color={classification === "GET" ? "info" : "warning"}
+          />
         ),
         match: api.param_match ? (
           <Chip
@@ -352,7 +384,12 @@ export default function ApiSanityDetails() {
               {api.params?.length || 0} params
             </MDTypography>
             {!api.param_match && mismatch.not_in_tools_info && (
-              <Chip label="Not in tools_info" size="small" color="error" variant="outlined" />
+              <Chip
+                label="Not in tools_info"
+                size="small"
+                color="error"
+                variant="outlined"
+              />
             )}
             {!api.param_match && mismatch.type_or_optional_diff?.length > 0 && (
               <Chip
@@ -400,12 +437,22 @@ export default function ApiSanityDetails() {
           </MDTypography>
         ),
         count: (
-          <Chip label={involved.length} color="warning" size="small" variant="outlined" />
+          <Chip
+            label={involved.length}
+            color="warning"
+            size="small"
+            variant="outlined"
+          />
         ),
         interfaces: (
           <MDBox display="flex" flexWrap="wrap" gap={0.5}>
             {involved.map((iface) => (
-              <Chip label={iface} size="small" color="primary" variant="outlined" />
+              <Chip
+                label={iface}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
             ))}
           </MDBox>
         ),
@@ -429,17 +476,29 @@ export default function ApiSanityDetails() {
 
   const comparisonTable = useMemo(() => {
     const columns = [
-      { Header: "Interface", accessor: "interface", width: "18%", align: "left" },
+      {
+        Header: "Interface",
+        accessor: "interface",
+        width: "18%",
+        align: "left",
+      },
       { Header: "Files Count", accessor: "files", align: "center" },
       { Header: "YAML Count", accessor: "yaml", align: "center" },
       { Header: "Files not in YAML", accessor: "missing", align: "left" },
-      { Header: "YAML entries missing files", accessor: "extra", align: "left" },
+      {
+        Header: "YAML entries missing files",
+        accessor: "extra",
+        align: "left",
+      },
     ];
 
-    const formatList = (items = []) => (items && items.length > 0 ? items.join(", ") : "—");
+    const formatList = (items = []) =>
+      items && items.length > 0 ? items.join(", ") : "—";
 
     const rows = Object.entries(comparison).map(([iface, comp]) => ({
-      interface: <Chip label={iface} size="small" color="primary" variant="outlined" />,
+      interface: (
+        <Chip label={iface} size="small" color="primary" variant="outlined" />
+      ),
       files: (
         <MDTypography variant="button" fontWeight="medium">
           {comp.files_count ?? "—"}
@@ -799,7 +858,10 @@ export default function ApiSanityDetails() {
                                         rows: [],
                                       }
                                     }
-                                    entriesPerPage={{ defaultValue: 5, entries: [5, 10, 20] }}
+                                    entriesPerPage={{
+                                      defaultValue: 5,
+                                      entries: [5, 10, 20],
+                                    }}
                                     canSearch={false}
                                     showTotalEntries={false}
                                     isSorted={false}
@@ -823,7 +885,10 @@ export default function ApiSanityDetails() {
                     <Box>
                       <DataTable
                         table={allApisTable}
-                        entriesPerPage={{ defaultValue: 10, entries: [5, 10, 25, 50] }}
+                        entriesPerPage={{
+                          defaultValue: 10,
+                          entries: [5, 10, 25, 50],
+                        }}
                         canSearch={false}
                         showTotalEntries={apis.length > 0}
                         pagination={{ variant: "gradient", color: "info" }}
@@ -852,7 +917,10 @@ export default function ApiSanityDetails() {
                     <Box>
                       <DataTable
                         table={comparisonTable}
-                        entriesPerPage={{ defaultValue: 10, entries: [5, 10, 20, 50] }}
+                        entriesPerPage={{
+                          defaultValue: 10,
+                          entries: [5, 10, 20, 50],
+                        }}
                         canSearch={false}
                         showTotalEntries={Object.keys(comparison).length > 0}
                         isSorted={false}
@@ -872,12 +940,12 @@ export default function ApiSanityDetails() {
         open={deleteDialog}
         onClose={() => !isDeleting && setDeleteDialog(false)}
       >
-        <DialogTitle>Delete Report</DialogTitle>
+        <DialogTitle color="primary">Delete Report</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <MDTypography variant="h5" color="primary">
             Are you sure you want to delete this API Sanity report? This action
             cannot be undone.
-          </DialogContentText>
+          </MDTypography>
         </DialogContent>
         <DialogActions>
           <MDButton

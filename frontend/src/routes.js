@@ -64,14 +64,14 @@ const routes = [
     route: "/test-generator",
     component: <TestGenerator />,
   },
-  {
-    type: "collapse",
-    name: "Test Reports",
-    key: "test-generator/reports",
-    icon: <Icon fontSize="small">description</Icon>,
-    route: "/test-generator/reports",
-    component: <TestReports />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Test Reports",
+  //   key: "test-generator/reports",
+  //   icon: <Icon fontSize="small">description</Icon>,
+  //   route: "/test-generator/reports",
+  //   component: <TestReports />,
+  // },
 
   {
     type: "collapse",
