@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // @mui material components
@@ -10,12 +10,6 @@ import Box from "@mui/material/Box";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import Tabs from "@mui/material/Tabs";
@@ -34,6 +28,7 @@ import MDButton from "components/MDButton";
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
+import DataTable from "examples/Tables/DataTable";
 
 // Auth context
 import { useAuth } from "../../lib/auth";
@@ -62,6 +57,15 @@ export default function Sanity() {
     message: "",
     severity: "info",
   });
+
+  const enumTableColumns = useMemo(
+    () => [
+      { Header: "Check", accessor: "check", width: "40%", align: "left" },
+      { Header: "Result", accessor: "result", width: "15%", align: "center" },
+      { Header: "Details", accessor: "details", align: "left" },
+    ],
+    []
+  );
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -167,7 +171,7 @@ export default function Sanity() {
     }
 
     try {
-      const res = await apiFetch(`/sanity/reports/${reportId}`, {
+      const res = await apiFetch(`/sanity/report/${reportId}`, {
         method: "DELETE",
       });
 
@@ -487,53 +491,73 @@ export default function Sanity() {
                               </MDBox>
                             </AccordionSummary>
                             <AccordionDetails>
-                              <TableContainer>
-                                <Table size="small">
-                                  <TableHead>
-                                    <TableRow>
-                                      <TableCell>Check</TableCell>
-                                      <TableCell>Result</TableCell>
-                                      <TableCell>Details</TableCell>
-                                    </TableRow>
-                                  </TableHead>
-                                  <TableBody>
-                                    {checks.map((check, idx) => (
-                                      <TableRow key={idx}>
-                                        <TableCell>{check.check}</TableCell>
-                                        <TableCell>
-                                          <Chip
-                                            icon={
-                                              <Icon fontSize="small">
-                                                {check.result
-                                                  ? "check_circle"
-                                                  : "cancel"}
-                                              </Icon>
-                                            }
-                                            label={
-                                              check.result ? "PASS" : "FAIL"
-                                            }
-                                            color={
-                                              check.result ? "success" : "error"
-                                            }
-                                            size="small"
-                                          />
-                                        </TableCell>
-                                        <TableCell>
-                                          <MDTypography
-                                            variant="caption"
-                                            color="text.secondary"
-                                          >
-                                            {check.details &&
-                                            check.details.length > 0
-                                              ? JSON.stringify(check.details)
-                                              : "—"}
-                                          </MDTypography>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </TableContainer>
+                              <DataTable
+                                table={{
+                                  columns: enumTableColumns,
+                                  rows:
+                                    checks && checks.length > 0
+                                      ? checks.map((check) => ({
+                                          check: (
+                                            <MDTypography
+                                              variant="button"
+                                              fontWeight="medium"
+                                            >
+                                              {check.check}
+                                            </MDTypography>
+                                          ),
+                                          result: (
+                                            <Chip
+                                              icon={
+                                                <Icon fontSize="small">
+                                                  {check.result
+                                                    ? "check_circle"
+                                                    : "cancel"}
+                                                </Icon>
+                                              }
+                                              label={
+                                                check.result ? "PASS" : "FAIL"
+                                              }
+                                              color={
+                                                check.result
+                                                  ? "success"
+                                                  : "error"
+                                              }
+                                              size="small"
+                                            />
+                                          ),
+                                          details: (
+                                            <MDTypography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              {check.details &&
+                                              check.details.length > 0
+                                                ? JSON.stringify(check.details)
+                                                : "—"}
+                                            </MDTypography>
+                                          ),
+                                        }))
+                                      : [
+                                          {
+                                            check: (
+                                              <MDTypography
+                                                variant="caption"
+                                                color="text.secondary"
+                                              >
+                                                No checks available
+                                              </MDTypography>
+                                            ),
+                                            result: "—",
+                                            details: "—",
+                                          },
+                                        ],
+                                }}
+                                entriesPerPage={false}
+                                canSearch={false}
+                                showTotalEntries={false}
+                                isSorted={false}
+                                noEndBorder
+                              />
                             </AccordionDetails>
                           </Accordion>
                         )
