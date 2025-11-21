@@ -2,7 +2,8 @@ from .sanity_runner import (
     run_sanity_check,
     list_sanity_reports,
     get_sanity_summary,
-    delete_sanity_report
+    delete_sanity_report,get_sanity_report
+
 )
 
 from .sanity_runner_zip import (
@@ -14,5 +15,6 @@ __all__ = [
     "list_sanity_reports",
     "get_sanity_summary",
     "run_sanity_from_zip",
-    "delete_sanity_report"
+    "delete_sanity_report",
+     "get_sanity_report"
 ]
