@@ -19,6 +19,10 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -39,6 +43,9 @@ export default function Sanity() {
 
   const [title, setTitle] = useState("Quick Sanity");
   const [reports, setReports] = useState([]);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // File upload state
   const [selectedFile, setSelectedFile] = useState(null);
@@ -165,13 +172,16 @@ export default function Sanity() {
     navigate(`/sanity/${reportId}`);
   };
 
-  const handleDeleteReport = async (reportId) => {
-    if (!window.confirm("Are you sure you want to delete this report?")) {
-      return;
-    }
+  const openDeleteDialog = (reportId) => {
+    setReportToDelete(reportId);
+    setDeleteDialog(true);
+  };
 
+  const handleDeleteReport = async () => {
+    if (!reportToDelete) return;
+    setIsDeleting(true);
     try {
-      const res = await apiFetch(`/sanity/report/${reportId}`, {
+      const res = await apiFetch(`/sanity/report/${reportToDelete}`, {
         method: "DELETE",
       });
 
@@ -196,6 +206,10 @@ export default function Sanity() {
         message: err.message || "Error deleting report",
         severity: "error",
       });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialog(false);
+      setReportToDelete(null);
     }
   };
 
@@ -877,7 +891,7 @@ export default function Sanity() {
                                 color="error"
                                 size="small"
                                 fullWidth
-                                onClick={() => handleDeleteReport(r._id)}
+                                onClick={() => openDeleteDialog(r._id)}
                               >
                                 <Icon sx={{ mr: 0.5 }}>delete</Icon>
                                 Delete
@@ -894,6 +908,35 @@ export default function Sanity() {
           </Grid>
         </Grid>
       </MDBox>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog}
+        onClose={() => !isDeleting && setDeleteDialog(false)}
+      >
+        <DialogTitle color="primary">Delete Report</DialogTitle>
+        <DialogContent>
+          <MDTypography variant="h5" color="primary">
+            Are you sure you want to delete this DB Sanity report? This action
+            cannot be undone.
+          </MDTypography>
+        </DialogContent>
+        <DialogActions>
+          <MDButton
+            onClick={() => setDeleteDialog(false)}
+            disabled={isDeleting}
+          >
+            Cancel
+          </MDButton>
+          <MDButton
+            color="error"
+            onClick={handleDeleteReport}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </MDButton>
+        </DialogActions>
+      </Dialog>
 
       {/* Toast Notification */}
       <Snackbar

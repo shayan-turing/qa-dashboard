@@ -10,9 +10,7 @@ import Alert from "@mui/material/Alert";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 
 // Material Dashboard 2 React components
@@ -58,8 +56,8 @@ export default function ValidateDetails() {
   // Toast state
   const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
 
-  // Modal state
-  const [confirmDialog, setConfirmDialog] = useState({ open: false });
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 📥 Load report details
   useEffect(() => {
@@ -142,7 +140,7 @@ export default function ValidateDetails() {
 
   // 🗑 Delete Report
   const handleDelete = async () => {
-    setConfirmDialog({ open: false });
+    setIsDeleting(true);
     try {
       const res = await apiFetch(`/reports/${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -158,6 +156,9 @@ export default function ValidateDetails() {
         message: "Network error while deleting report",
         severity: "error",
       });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialog(false);
     }
   };
 
@@ -403,7 +404,7 @@ export default function ValidateDetails() {
               <MDButton
                 variant="gradient"
                 color="error"
-                onClick={() => setConfirmDialog({ open: true })}
+                onClick={() => setDeleteDialog(true)}
                 startIcon={<Icon>delete</Icon>}
               >
                 Delete Validation
@@ -429,17 +430,28 @@ export default function ValidateDetails() {
         </Alert>
       </Snackbar>
 
-      {/* Confirmation Dialog */}
-      <Dialog open={confirmDialog.open} onClose={() => setConfirmDialog({ open: false })}>
-        <DialogTitle>Delete this validation report?</DialogTitle>
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog}
+        onClose={() => !isDeleting && setDeleteDialog(false)}
+      >
+        <DialogTitle color="primary">Delete Report</DialogTitle>
         <DialogContent>
-          <DialogContentText>This action cannot be undone.</DialogContentText>
+          <MDTypography variant="h5" color="primary">
+            Are you sure you want to delete this validation report? This action
+            cannot be undone.
+          </MDTypography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialog({ open: false })}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Delete
-          </Button>
+          <MDButton
+            onClick={() => setDeleteDialog(false)}
+            disabled={isDeleting}
+          >
+            Cancel
+          </MDButton>
+          <MDButton color="error" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? "Deleting..." : "Delete"}
+          </MDButton>
         </DialogActions>
       </Dialog>
     </DashboardLayout>

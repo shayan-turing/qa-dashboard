@@ -12,7 +12,6 @@ import Alert from "@mui/material/Alert";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Icon from "@mui/material/Icon";
 import Box from "@mui/material/Box";
@@ -67,11 +66,10 @@ export default function Validate() {
     severity: "info",
   });
 
-  // Modal state
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    onConfirm: null,
-  });
+  // Delete dialog state
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load Validation Reports
   const loadReports = useCallback(async () => {
@@ -206,26 +204,42 @@ export default function Validate() {
     }
   };
 
-  // Delete Report
-  const remove = async (id) => {
-    setConfirmDialog({
-      open: true,
-      onConfirm: async () => {
-        const res = await apiFetch(`/validate/${id}`, { method: "DELETE" });
-        const data = await res.json();
-        if (res.ok) {
-          setToast({ open: true, message: "Deleted", severity: "success" });
-          setItems(items.filter((x) => (x._id || x.id) !== id));
-        } else {
-          setToast({
-            open: true,
-            message: data.error || "Delete failed",
-            severity: "error",
-          });
-        }
-        setConfirmDialog({ open: false, onConfirm: null });
-      },
-    });
+  const openDeleteDialog = (id) => {
+    setReportToDelete(id);
+    setDeleteDialog(true);
+  };
+
+  const handleDelete = async () => {
+    if (!reportToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await apiFetch(`/validate/${reportToDelete}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setToast({ open: true, message: "Deleted", severity: "success" });
+        setItems((prev) =>
+          prev.filter((x) => (x._id || x.id) !== reportToDelete)
+        );
+      } else {
+        setToast({
+          open: true,
+          message: data.error || "Delete failed",
+          severity: "error",
+        });
+      }
+    } catch {
+      setToast({
+        open: true,
+        message: "Network error while deleting",
+        severity: "error",
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialog(false);
+      setReportToDelete(null);
+    }
   };
 
   return (
@@ -254,7 +268,7 @@ export default function Validate() {
                     {/* Excel Upload */}
                     <Grid item xs={12} lg={6}>
                       <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                        Upload Excel File (.xlsx, .xls)
+                        Tools Excel File (.xlsx, .xls)
                       </MDTypography>
                       <Button
                         variant="outlined"
@@ -279,7 +293,7 @@ export default function Validate() {
                     {/* Document Upload */}
                     <Grid item xs={12} lg={6}>
                       <MDTypography variant="body2" fontWeight="medium" mb={1}>
-                        Upload Document (.txt, .docx, .pdf)
+                        Technical Document (.txt, .docx, .pdf)
                       </MDTypography>
                       <Button
                         variant="outlined"
@@ -528,7 +542,7 @@ export default function Validate() {
                               variant="gradient"
                               color="error"
                               size="small"
-                              onClick={() => remove(id)}
+                              onClick={() => openDeleteDialog(id)}
                             >
                               <Icon sx={{ mr: 0.5 }}>delete</Icon>
                               Delete
@@ -561,28 +575,28 @@ export default function Validate() {
         </Alert>
       </Snackbar>
 
-      {/* Confirmation Dialog */}
+      {/* Delete Confirmation Dialog */}
       <Dialog
-        open={confirmDialog.open}
-        onClose={() => setConfirmDialog({ open: false, onConfirm: null })}
+        open={deleteDialog}
+        onClose={() => !isDeleting && setDeleteDialog(false)}
       >
-        <DialogTitle>Delete Validation Report?</DialogTitle>
+        <DialogTitle color="primary">Delete Report</DialogTitle>
         <DialogContent>
-          <DialogContentText>This action cannot be undone.</DialogContentText>
+          <MDTypography variant="h5" color="primary">
+            Are you sure you want to delete this validation report? This action
+            cannot be undone.
+          </MDTypography>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setConfirmDialog({ open: false, onConfirm: null })}
+          <MDButton
+            onClick={() => setDeleteDialog(false)}
+            disabled={isDeleting}
           >
             Cancel
-          </Button>
-          <Button
-            onClick={confirmDialog.onConfirm}
-            color="error"
-            variant="contained"
-          >
-            Delete
-          </Button>
+          </MDButton>
+          <MDButton color="error" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? "Deleting..." : "Delete"}
+          </MDButton>
         </DialogActions>
       </Dialog>
     </DashboardLayout>

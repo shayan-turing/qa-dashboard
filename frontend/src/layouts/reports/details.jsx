@@ -11,9 +11,7 @@ import Alert from "@mui/material/Alert";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 
 // Material Dashboard 2 React components
@@ -60,8 +58,8 @@ export default function ReportDetails() {
   // Toast state
   const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
 
-  // Modal state
-  const [confirmDialog, setConfirmDialog] = useState({ open: false });
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 📥 Load report details
   useEffect(() => {
@@ -152,7 +150,7 @@ export default function ReportDetails() {
 
   // 🗑 Delete report
   const handleDelete = async () => {
-    setConfirmDialog({ open: false });
+    setIsDeleting(true);
     try {
       const res = await apiFetch(`/reports/${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -172,6 +170,9 @@ export default function ReportDetails() {
         message: "Network error while deleting report",
         severity: "error",
       });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialog(false);
     }
   };
 
@@ -359,27 +360,27 @@ export default function ReportDetails() {
                 <MDBox component="ul" sx={{ pl: 2, "& li": { mb: 1.5 } }}>
                   <li>
                     <MDTypography variant="body2" color="text">
-                      <strong>🔹 Jaccard Similarity:</strong> Measures how many words or phrases are
+                      <strong> Jaccard Similarity:</strong> Measures how many words or phrases are
                       shared between two documents. Higher = more overlap in content.
                     </MDTypography>
                   </li>
                   <li>
                     <MDTypography variant="body2" color="text">
-                      <strong>🔹 TF-IDF (Term Frequency-Inverse Document Frequency):</strong>{" "}
+                      <strong> TF-IDF (Term Frequency-Inverse Document Frequency):</strong>{" "}
                       Measures how similar documents are based on important terms (not just common
                       words like &quot;the&quot;). Good for keyword-based similarity.
                     </MDTypography>
                   </li>
                   <li>
                     <MDTypography variant="body2" color="text">
-                      <strong>🔹 Semantic Similarity:</strong> Uses word meanings to find similarity
+                      <strong> Semantic Similarity:</strong> Uses word meanings to find similarity
                       — even if words differ but mean the same thing (like &quot;car&quot; and
                       &quot;automobile&quot;).
                     </MDTypography>
                   </li>
                   <li>
                     <MDTypography variant="body2" color="text">
-                      <strong>🔹 LLM Embedding Similarity:</strong> Uses AI embeddings (like from
+                      <strong> LLM Embedding Similarity:</strong> Uses AI embeddings (like from
                       GPT or BERT) to compare the deeper conceptual meaning of both documents.
                     </MDTypography>
                   </li>
@@ -403,7 +404,7 @@ export default function ReportDetails() {
               <MDButton
                 variant="gradient"
                 color="error"
-                onClick={() => setConfirmDialog({ open: true })}
+                onClick={() => setDeleteDialog(true)}
                 startIcon={<Icon>delete</Icon>}
               >
                 Delete Report
@@ -429,17 +430,28 @@ export default function ReportDetails() {
         </Alert>
       </Snackbar>
 
-      {/* Confirmation Dialog */}
-      <Dialog open={confirmDialog.open} onClose={() => setConfirmDialog({ open: false })}>
-        <DialogTitle>Delete this report?</DialogTitle>
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog}
+        onClose={() => !isDeleting && setDeleteDialog(false)}
+      >
+        <DialogTitle color="primary">Delete Report</DialogTitle>
         <DialogContent>
-          <DialogContentText>This action cannot be undone.</DialogContentText>
+          <MDTypography variant="h5" color="primary">
+            Are you sure you want to delete this API Sanity report? This action
+            cannot be undone.
+          </MDTypography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialog({ open: false })}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
-            Delete
-          </Button>
+          <MDButton
+            onClick={() => setDeleteDialog(false)}
+            disabled={isDeleting}
+          >
+            Cancel
+          </MDButton>
+          <MDButton color="error" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? "Deleting..." : "Delete"}
+          </MDButton>
         </DialogActions>
       </Dialog>
     </DashboardLayout>
