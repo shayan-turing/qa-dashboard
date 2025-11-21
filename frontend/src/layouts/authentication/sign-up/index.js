@@ -4,6 +4,7 @@ import { Link, Navigate } from "react-router-dom";
 // @mui material components
 import Card from "@mui/material/Card";
 import Checkbox from "@mui/material/Checkbox";
+import CircularProgress from "@mui/material/CircularProgress";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -25,6 +26,7 @@ function Singup() {
   const [err, setErr] = useState("");
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const togglePassword = () => setShowPassword((prev) => !prev);
   if (user) return <Navigate to="/dashboard" replace />;
   if (success) return <Navigate to="/authentication/sign-in" replace />;
@@ -32,11 +34,14 @@ function Singup() {
   const submit = async (e) => {
     e.preventDefault();
     setErr("");
+    setIsLoading(true);
     try {
       await register(email, password);
       setSuccess(true);
     } catch (ex) {
       setErr(ex.message || "Registration Failed");
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -118,8 +123,15 @@ function Singup() {
               </MDBox>
             )}
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth type="submit">
-                Register
+              <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+                    Registering...
+                  </>
+                ) : (
+                  "Register"
+                )}
               </MDButton>
             </MDBox>
             <MDBox mt={3} mb={1} textAlign="center">

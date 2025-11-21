@@ -6,6 +6,7 @@ import { Link, Navigate } from "react-router-dom";
 // @mui material components
 import Card from "@mui/material/Card";
 import Switch from "@mui/material/Switch";
+import CircularProgress from "@mui/material/CircularProgress";
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
@@ -27,17 +28,20 @@ function Signin() {
   const [err, setErr] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const togglePassword = () => setShowPassword((prev) => !prev);
 
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
   const submit = async (e) => {
     e.preventDefault();
     setErr("");
-
+    setIsLoading(true);
     try {
       await login(email, password);
     } catch (ex) {
       setErr(ex.message || "Login failed");
+    } finally {
+      setIsLoading(false);
     }
   };
   if (user) return <Navigate to="/dashboard" replace />;
@@ -108,8 +112,15 @@ function Signin() {
             )}
 
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth type="submit">
-                Login
+              <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
               </MDButton>
             </MDBox>
             <MDBox mt={3} mb={1} textAlign="center">
