@@ -157,7 +157,7 @@ def download_report(report_id):
 def delete_reports(report_id=None):
 	"""Delete all reports for the user, or a specific report by id."""
 	uid = get_jwt_identity()
-	
+	print('Deleting reports',report_id)
 	if report_id:
 		# Delete specific report
 		try:
