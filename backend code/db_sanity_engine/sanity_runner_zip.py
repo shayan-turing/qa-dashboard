@@ -1,4 +1,3 @@
-
 import os
 import io
 import json
@@ -28,38 +27,87 @@ from .sanity_checks_core_full import (
     check_generic_foreign_keys
 )
 
+# -------------------------------------------------------------------
+# Mongo Setup
+# -------------------------------------------------------------------
 load_dotenv()
 mongo = MongoClient(os.getenv("MONGO_URI"))
 db = mongo["docdiff"]
 
-def oid(x): return ObjectId(str(x))
-def now(): return datetime.now(timezone.utc)
+
+# -------------------------------------------------------------------
+# Utility
+# -------------------------------------------------------------------
+def now():
+    """Return current UTC datetime (timezone-aware)."""
+    return datetime.now(timezone.utc)
 
 
+def try_parse_objectid(value):
+    """Try to parse string → ObjectId. If invalid, return None."""
+    if not isinstance(value, str):
+        return None
+    try:
+        return ObjectId(value)
+    except Exception:
+        return None
+
+
+def _build_user_query(user_id):
+    """
+    Match both:
+      - New format: user_id saved as plain string
+      - Legacy format: user_id saved as ObjectId
+    """
+    oid = try_parse_objectid(user_id)
+    if oid:
+        return {"$in": [user_id, oid]}
+    else:
+        return user_id
+
+
+# -------------------------------------------------------------------
+# Main ZIP Sanity Runner
+# -------------------------------------------------------------------
 def run_sanity_from_zip(user_id, zip_file_stream):
+    """
+    Runs a ZIP-based sanity check.
+
+    ZIP format must contain:
+      /data/*.json
+      enums.yaml
+      relationships.yaml
+
+    Stores results under report_type="db_sanity_zip".
+    user_id is saved exactly as JWT provides (string), with backward compatibility.
+    """
 
     temp_dir = tempfile.mkdtemp()
 
     try:
-        z = zipfile.ZipFile(zip_file_stream)
-        z.extractall(temp_dir)
-        z.close()
+        # Extract ZIP
+        with zipfile.ZipFile(zip_file_stream) as z:
+            z.extractall(temp_dir)
 
-        root = temp_dir
+        # Handle optional root folder
         items = os.listdir(temp_dir)
-
-        # If ZIP has only one directory inside, go inside it
-        if len(items) == 1 and os.path.isdir(os.path.join(temp_dir, items[0])):
-            root = os.path.join(temp_dir, items[0])
+        root = (
+            os.path.join(temp_dir, items[0])
+            if len(items) == 1 and os.path.isdir(os.path.join(temp_dir, items[0]))
+            else temp_dir
+        )
 
         data_dir = os.path.join(root, "data")
         enum_file = os.path.join(root, "enums.yaml")
         rel_file = os.path.join(root, "relationships.yaml")
 
+        # Validate required files
         if not os.path.exists(data_dir):
             raise Exception("Missing folder /data inside ZIP")
+
         if not os.path.exists(enum_file):
             raise Exception("Missing enums.yaml in ZIP")
+
         if not os.path.exists(rel_file):
             raise Exception("Missing relationships.yaml in ZIP")
 
@@ -86,7 +134,7 @@ def run_sanity_from_zip(user_id, zip_file_stream):
         fk_rels = rel_yaml.get("foreign_keys", []) or []
         generic_rels = rel_yaml.get("generic_foreign_keys", []) or []
 
-        # Build Report
+        # Final Report
         report = {
             "timestamp": now().isoformat(),
             "tables": {},
@@ -96,7 +144,7 @@ def run_sanity_from_zip(user_id, zip_file_stream):
             "generic_fk_summary": {}
         }
 
-        # Base checks
+        # Base Sanity Checks
         for tname, df in dfs.items():
             tbl = {"row_count": len(df), "checks": []}
             enum_tbl = {"checks": []}
@@ -109,19 +157,31 @@ def run_sanity_from_zip(user_id, zip_file_stream):
             report["tables"][tname] = tbl
             report["enum_tables"][tname] = enum_tbl["checks"]
 
-        # FK checks
+        # FK Checks
         if fk_rels:
             check_foreign_keys(fk_rels, dfs, report)
 
-        # Generic FK checks
+        # Generic FK Checks
         if generic_rels:
             check_generic_foreign_keys(generic_rels, dfs, report)
-            generic_entries = [r for r in report["relationships"] if r.get("kind") == "generic"]
+
+            # Extract generic FK entries
+            generic_entries = [
+                r for r in report["relationships"]
+                if r.get("kind") == "generic"
+            ]
 
             report["generic_relationships"] = generic_entries
 
-            passes = sum(1 for r in generic_entries if isinstance(r.get("result"), bool) and r["result"])
-            fails = sum(1 for r in generic_entries if isinstance(r.get("result"), bool) and not r["result"])
+            # Generic FK summary
+            passes = sum(
+                1 for r in generic_entries
+                if isinstance(r.get("result"), bool) and r["result"]
+            )
+            fails = sum(
+                1 for r in generic_entries
+                if isinstance(r.get("result"), bool) and not r["result"]
+            )
 
             report["generic_fk_summary"] = {
                 "total": len(generic_entries),
@@ -129,9 +189,12 @@ def run_sanity_from_zip(user_id, zip_file_stream):
                 "fails": fails
             }
 
-        # Store In DB
+        # -------------------------------------------------------------------
+        # SAVE TO DB
+        # -------------------------------------------------------------------
         doc = {
-            "user_id": oid(user_id),
+            # FIXED: Store user_id exactly as string (same as JSON sanity runner)
+            "user_id": user_id,
             "title": f"ZIP Sanity Check - {datetime.utcnow().isoformat()}",
             "results": report,
             "status": "completed",
@@ -139,9 +202,9 @@ def run_sanity_from_zip(user_id, zip_file_stream):
             "created_at": now()
         }
 
-        db.reports.insert_one(doc)
-        doc["_id"] = str(doc["_id"])
-        doc["user_id"] = user_id
+        inserted = db.reports.insert_one(doc)
+        doc["_id"] = str(inserted.inserted_id)
+        doc["user_id"] = str(user_id)
 
         return doc
 
