@@ -428,7 +428,10 @@ export default function SanityDetails() {
                                   size="small"
                                   sx={{ mr: 2 }}
                                 />
-                                <MDTypography variant="body2" color="text">
+                                <MDTypography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {checks.length || 0} checks
                                 </MDTypography>
                                 <MDBox ml="auto" mr={2}>
@@ -454,7 +457,10 @@ export default function SanityDetails() {
                                     checks && checks.length > 0
                                       ? checks.map((check) => ({
                                           check: (
-                                            <MDTypography variant="button" fontWeight="medium">
+                                            <MDTypography
+                                              variant="button"
+                                              fontWeight="medium"
+                                            >
                                               {check.check}
                                             </MDTypography>
                                           ),
@@ -462,17 +468,29 @@ export default function SanityDetails() {
                                             <Chip
                                               icon={
                                                 <Icon fontSize="small">
-                                                  {check.result ? "check_circle" : "cancel"}
+                                                  {check.result
+                                                    ? "check_circle"
+                                                    : "cancel"}
                                                 </Icon>
                                               }
-                                              label={check.result ? "PASS" : "FAIL"}
-                                              color={check.result ? "success" : "error"}
+                                              label={
+                                                check.result ? "PASS" : "FAIL"
+                                              }
+                                              color={
+                                                check.result
+                                                  ? "success"
+                                                  : "error"
+                                              }
                                               size="small"
                                             />
                                           ),
                                           details: (
-                                            <MDTypography variant="caption" color="text.secondary">
-                                              {check.details && check.details.length > 0
+                                            <MDTypography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              {check.details &&
+                                              check.details.length > 0
                                                 ? JSON.stringify(check.details)
                                                 : "—"}
                                             </MDTypography>
@@ -481,7 +499,10 @@ export default function SanityDetails() {
                                       : [
                                           {
                                             check: (
-                                              <MDTypography variant="caption" color="text.secondary">
+                                              <MDTypography
+                                                variant="caption"
+                                                color="text.secondary"
+                                              >
                                                 No checks available
                                               </MDTypography>
                                             ),
@@ -524,7 +545,11 @@ export default function SanityDetails() {
                               width="100%"
                             >
                               <Icon sx={{ mr: 1 }}>link</Icon>
-                              <MDTypography variant="body2" fontWeight="medium">
+                              <MDTypography
+                                variant="body2"
+                                fontWeight="medium"
+                                color="text.secondary"
+                              >
                                 {rel.relationship}
                               </MDTypography>
                               <MDBox ml="auto" mr={2}>
@@ -593,7 +618,11 @@ export default function SanityDetails() {
                               width="100%"
                             >
                               <Icon sx={{ mr: 1 }}>device_hub</Icon>
-                              <MDTypography variant="body2" fontWeight="medium">
+                              <MDTypography
+                                variant="body2"
+                                fontWeight="medium"
+                                color="text.secondary"
+                              >
                                 {rel.relationship}
                               </MDTypography>
                               <MDBox ml="auto" mr={2}>
