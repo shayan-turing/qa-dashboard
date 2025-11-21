@@ -1471,10 +1471,8 @@ def api_generate_tests_folder():
 def api_list_bulk_reports():
     uid = get_jwt_identity()
     docs = list(db.reports.find({"user_id": oid(uid)}).sort("created_at", -1).limit(10))
-    for d in docs:
-        d["_id"] = str(d["_id"])
-    return jsonify({"items": docs})
-
+    clean = mongo_to_json(docs)
+    return jsonify({"items": clean}), 200
 # ---------------------- Serve Local Downloads ----------------------
 @app.get("/downloads/<uid>/<path:filename>")
 def serve_local_file(uid, filename):
