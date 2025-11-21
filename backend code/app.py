@@ -1331,9 +1331,15 @@ def stream_test_generation(folder_path: str, uid: str):
                     pass
 
         # Collect outputs into work_dir
-        for folder in ["generated_tests", "coverage_html_report", "logs"]:
-            if os.path.exists(folder):
-                shutil.copytree(folder, os.path.join(work_dir, folder), dirs_exist_ok=True)
+        run_dir = Path(result.get("run_dir"))
+        
+        folders = ["generated_tests", "coverage_html_report", "logs"]
+        for folder in folders:
+            src = run_dir / folder
+            dest = Path(work_dir) / folder
+            if src.exists():
+                shutil.copytree(src, dest, dirs_exist_ok=True)
+
 
         # Upload or local store
         prefix = f"testgen_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
