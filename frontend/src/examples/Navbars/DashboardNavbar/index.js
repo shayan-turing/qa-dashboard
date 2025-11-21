@@ -16,7 +16,7 @@ Coded by www.creative-tim.com
 import { useState, useEffect } from "react";
 
 // react-router components
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
@@ -31,6 +31,7 @@ import Icon from "@mui/material/Icon";
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDInput from "components/MDInput";
+import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import Breadcrumbs from "examples/Breadcrumbs";
@@ -53,12 +54,16 @@ import {
   setOpenConfigurator,
 } from "context";
 
+import { useAuth } from "lib/auth";
+
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useMaterialUIController();
   const { miniSidenav, transparentNavbar, fixedNavbar, openConfigurator, darkMode } = controller;
   const [openMenu, setOpenMenu] = useState(false);
   const route = useLocation().pathname.split("/").slice(1);
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     // Setting the navbar type
@@ -90,6 +95,10 @@ function DashboardNavbar({ absolute, light, isMini }) {
   const handleConfiguratorOpen = () => setOpenConfigurator(dispatch, !openConfigurator);
   const handleOpenMenu = (event) => setOpenMenu(event.currentTarget);
   const handleCloseMenu = () => setOpenMenu(false);
+  const handleLogout = () => {
+    logout();
+    navigate("/authentication/sign-in/basic");
+  };
 
   // Render the notifications menu
   const renderMenu = () => (
@@ -144,6 +153,16 @@ function DashboardNavbar({ absolute, light, isMini }) {
                   <Icon sx={iconsStyle}>account_circle</Icon>
                 </IconButton>
               </Link>
+              <MDButton
+                size="small"
+                variant="outlined"
+                color="info"
+                sx={{ ml: 1, px: 2 }}
+                onClick={handleLogout}
+              >
+                <Icon sx={{ fontSize: "1rem", mr: 0.5 }}>logout</Icon>
+                Logout
+              </MDButton>
               <IconButton
                 size="small"
                 disableRipple

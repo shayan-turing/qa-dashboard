@@ -299,7 +299,12 @@ export default function ApiSanityChecker() {
 
   const perInterfaceTable = useMemo(() => {
     const columns = [
-      { Header: "Interface", accessor: "interface", width: "20%", align: "left" },
+      {
+        Header: "Interface",
+        accessor: "interface",
+        width: "20%",
+        align: "left",
+      },
       { Header: "Total APIs", accessor: "total", align: "center" },
       { Header: "GET", accessor: "get", align: "center" },
       { Header: "SET", accessor: "set", align: "center" },
@@ -310,14 +315,26 @@ export default function ApiSanityChecker() {
       .map((iface) => {
         const s = ifaceSummary[iface];
         return {
-          interface: <Chip label={iface} size="small" variant="outlined" />,
+          interface: (
+            <Chip
+              label={iface}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+          ),
           total: (
             <MDTypography variant="button" fontWeight="medium">
               {s.total_apis}
             </MDTypography>
           ),
           get: (
-            <MDBox display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+            <MDBox
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              gap={0.5}
+            >
               <MDTypography variant="button" fontWeight="medium">
                 {s.get.count}
               </MDTypography>
@@ -327,7 +344,12 @@ export default function ApiSanityChecker() {
             </MDBox>
           ),
           set: (
-            <MDBox display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+            <MDBox
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              gap={0.5}
+            >
               <MDTypography variant="button" fontWeight="medium">
                 {s.set.count}
               </MDTypography>
@@ -365,7 +387,12 @@ export default function ApiSanityChecker() {
 
     const rows = duplicates.map((dup) => ({
       apiName: (
-        <Chip label={dup.api_name} size="small" color="warning" variant="outlined" />
+        <Chip
+          label={dup.api_name}
+          size="small"
+          color="warning"
+          variant="outlined"
+        />
       ),
       interfaces: (
         <MDTypography variant="caption" color="text">
@@ -392,7 +419,12 @@ export default function ApiSanityChecker() {
 
   const comparisonTable = useMemo(() => {
     const columns = [
-      { Header: "Interface", accessor: "interface", width: "18%", align: "left" },
+      {
+        Header: "Interface",
+        accessor: "interface",
+        width: "18%",
+        align: "left",
+      },
       { Header: "Files Count", accessor: "files", align: "center" },
       { Header: "YAML Count", accessor: "yaml", align: "center" },
       { Header: "Files not in YAML", accessor: "missing", align: "left" },
@@ -411,7 +443,7 @@ export default function ApiSanityChecker() {
       .map((iface) => {
         const c = comparison[iface] || {};
         return {
-          interface: <Chip label={iface} size="small" variant="outlined" />,
+          interface: <Chip label={iface} size="small" color="primary" variant="outlined" />,
           files: (
             <MDTypography variant="button" fontWeight="medium">
               {c.files_count ?? "—"}
@@ -518,7 +550,7 @@ export default function ApiSanityChecker() {
         interface: {
           raw: api.interface || "",
           content: (
-            <Chip label={api.interface} size="small" variant="outlined" />
+            <Chip label={api.interface} size="small" color="primary" variant="outlined" />
           ),
         },
         signature: {
@@ -536,7 +568,11 @@ export default function ApiSanityChecker() {
         type: {
           raw: classification,
           content: (
-            <Chip label={classification || "N/A"} size="small" color={typeColor} />
+            <Chip
+              label={classification || "N/A"}
+              size="small"
+              color={typeColor}
+            />
           ),
         },
         match: {
@@ -652,7 +688,7 @@ export default function ApiSanityChecker() {
                     type="submit"
                     disabled={isUploading}
                     sx={{
-                      mt: 3, 
+                      mt: 3,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -757,7 +793,10 @@ export default function ApiSanityChecker() {
                     </MDTypography>
                     <DataTable
                       table={perInterfaceTable.table}
-                      entriesPerPage={{ defaultValue: 8, entries: [5, 8, 15, 25, 50] }}
+                      entriesPerPage={{
+                        defaultValue: 8,
+                        entries: [5, 8, 15, 25, 50],
+                      }}
                       canSearch={false}
                       showTotalEntries={perInterfaceTable.hasData}
                       isSorted={false}
@@ -823,7 +862,10 @@ export default function ApiSanityChecker() {
                     </MDTypography>
                     <DataTable
                       table={comparisonTable.table}
-                      entriesPerPage={{ defaultValue: 10, entries: [5, 10, 20, 50] }}
+                      entriesPerPage={{
+                        defaultValue: 10,
+                        entries: [5, 10, 20, 50],
+                      }}
                       canSearch={false}
                       showTotalEntries={comparisonTable.hasData}
                       isSorted={false}
@@ -856,7 +898,7 @@ export default function ApiSanityChecker() {
                             value={filterInterface}
                             label="Interface"
                             onChange={(e) => setFilterInterface(e.target.value)}
-                            sx={{height:40}}
+                            sx={{ height: 40 }}
                           >
                             <MenuItem value="__all__">All</MenuItem>
                             {interfaces.sort().map((iface) => (
@@ -874,7 +916,7 @@ export default function ApiSanityChecker() {
                             value={filterType}
                             label="Type"
                             onChange={(e) => setFilterType(e.target.value)}
-                             sx={{height:40}}
+                            sx={{ height: 40 }}
                           >
                             <MenuItem value="__all__">All</MenuItem>
                             <MenuItem value="get">GET</MenuItem>
@@ -889,7 +931,7 @@ export default function ApiSanityChecker() {
                             value={filterMatch}
                             label="Match"
                             onChange={(e) => setFilterMatch(e.target.value)}
-                             sx={{height:40}}
+                            sx={{ height: 40 }}
                           >
                             <MenuItem value="__all__">All</MenuItem>
                             <MenuItem value="match">Match</MenuItem>
