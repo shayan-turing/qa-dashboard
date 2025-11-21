@@ -405,7 +405,7 @@ export default function ApiSanityDetails() {
         interfaces: (
           <MDBox display="flex" flexWrap="wrap" gap={0.5}>
             {involved.map((iface) => (
-              <Chip key={iface} label={iface} size="small" variant="outlined" />
+              <Chip label={iface} size="small" color="primary" variant="outlined" />
             ))}
           </MDBox>
         ),
