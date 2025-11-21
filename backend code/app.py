@@ -1411,7 +1411,7 @@ def stream_test_generation(folder_path: str, uid: str):
 @jwt_required()
 def api_generate_tests_folder():
     try:
-        uid = str(ObjectId())  # unique ID for this run
+        uid = get_jwt_identity()  # unique ID for this run
         uploaded_file = request.files.get("file")
         if not uploaded_file:
             return jsonify({"error": "No file uploaded"}), 400
