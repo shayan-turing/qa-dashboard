@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 // PDF libraries
@@ -12,12 +12,6 @@ import Icon from "@mui/material/Icon";
 import Box from "@mui/material/Box";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tabs from "@mui/material/Tabs";
@@ -40,6 +34,7 @@ import MDButton from "components/MDButton";
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
+import DataTable from "examples/Tables/DataTable";
 
 // Auth context
 import { useAuth } from "../../lib/auth";
@@ -181,6 +176,309 @@ export default function ApiSanityDetails() {
     }
   };
 
+  const results = report?.results || {};
+  const overall = results.summary?.overall || {
+    total_apis: 0,
+    get: { count: 0, percent: 0 },
+    set: { count: 0, percent: 0 },
+  };
+  const summaryInterfaces = results.summary?.interfaces || {};
+  const interfacesList = results.interfaces || [];
+  const apis = results.apis || [];
+  const duplicates = results.duplicates || [];
+  const comparison = results.interface_file_yaml_comparison || {};
+
+  const summaryTable = useMemo(() => {
+    const columns = [
+      { Header: "Interface", accessor: "interface", width: "20%", align: "left" },
+      { Header: "Total APIs", accessor: "total", align: "center" },
+      { Header: "GET", accessor: "get", align: "center" },
+      { Header: "SET", accessor: "set", align: "center" },
+    ];
+
+    const rows = Object.entries(summaryInterfaces).map(([iface, data]) => ({
+      interface: <Chip label={iface} size="small" color="primary" variant="outlined" />,
+      total: (
+        <MDTypography variant="button" fontWeight="medium">
+          {data.total_apis || data.total || 0}
+        </MDTypography>
+      ),
+      get: (
+        <MDBox display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+          <MDTypography variant="button" fontWeight="medium">
+            {data.get?.count || 0}
+          </MDTypography>
+          <MDTypography variant="caption" color="text">
+            ({data.get?.percent || 0}%)
+          </MDTypography>
+        </MDBox>
+      ),
+      set: (
+        <MDBox display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+          <MDTypography variant="button" fontWeight="medium">
+            {data.set?.count || 0}
+          </MDTypography>
+          <MDTypography variant="caption" color="text">
+            ({data.set?.percent || 0}%)
+          </MDTypography>
+        </MDBox>
+      ),
+    }));
+
+    if (!rows.length) {
+      rows.push({
+        interface: (
+          <MDTypography variant="caption" color="text">
+            No interface summary data available
+          </MDTypography>
+        ),
+        total: "—",
+        get: "—",
+        set: "—",
+      });
+    }
+
+    return { columns, rows };
+  }, [summaryInterfaces]);
+
+  const interfaceTables = useMemo(() => {
+    const columns = [
+      { Header: "API Name", accessor: "name", width: "30%", align: "left" },
+      { Header: "Type", accessor: "type", align: "center" },
+      { Header: "Match", accessor: "match", align: "center" },
+      { Header: "Parameters", accessor: "params", align: "center" },
+    ];
+
+    const tables = {};
+
+    interfacesList.forEach((ifaceName) => {
+      const rows = apis
+        .filter((api) => api.interface === ifaceName)
+        .map((api) => ({
+          name: (
+            <MDTypography variant="button" fontWeight="medium">
+              {api.api_name}
+            </MDTypography>
+          ),
+          type: (
+            <Chip
+              label={api.classification?.toUpperCase() || "N/A"}
+              size="small"
+              color={(api.classification || "").toLowerCase() === "get" ? "info" : "warning"}
+            />
+          ),
+          match: api.param_match ? (
+            <Chip
+              icon={<Icon fontSize="small">check_circle</Icon>}
+              label="Match"
+              size="small"
+              color="success"
+            />
+          ) : (
+            <Chip
+              icon={<Icon fontSize="small">cancel</Icon>}
+              label="Mismatch"
+              size="small"
+              color="error"
+            />
+          ),
+          params: (
+            <MDTypography variant="caption" color="text">
+              {api.params?.length || 0} params
+            </MDTypography>
+          ),
+        }));
+
+      if (!rows.length) {
+        rows.push({
+          name: (
+            <MDTypography variant="caption" color="text">
+              No APIs for this interface
+            </MDTypography>
+          ),
+          type: "—",
+          match: "—",
+          params: "—",
+        });
+      }
+
+      tables[ifaceName] = { columns, rows };
+    });
+
+    return tables;
+  }, [interfacesList, apis]);
+
+  const allApisTable = useMemo(() => {
+    const columns = [
+      { Header: "API Name", accessor: "name", width: "28%", align: "left" },
+      { Header: "Interface", accessor: "interface", align: "center" },
+      { Header: "Type", accessor: "type", align: "center" },
+      { Header: "Match", accessor: "match", align: "center" },
+      { Header: "Parameters", accessor: "params", width: "22%", align: "left" },
+    ];
+
+    const rows = apis.map((api) => {
+      const classification = (api.classification || "").toUpperCase();
+      const mismatch = api.param_mismatch || {};
+
+      return {
+        name: (
+          <MDTypography variant="button" fontWeight="medium">
+            {api.api_name}
+          </MDTypography>
+        ),
+        interface: <Chip label={api.interface} size="small" color="primary" variant="outlined" />,
+        type: (
+          <Chip label={classification || "N/A"} size="small" color={classification === "GET" ? "info" : "warning"} />
+        ),
+        match: api.param_match ? (
+          <Chip
+            icon={<Icon fontSize="small">check_circle</Icon>}
+            label="Match"
+            size="small"
+            color="success"
+          />
+        ) : (
+          <Chip
+            icon={<Icon fontSize="small">cancel</Icon>}
+            label="Mismatch"
+            size="small"
+            color="error"
+          />
+        ),
+        params: (
+          <MDBox display="flex" flexWrap="wrap" alignItems="center" gap={0.5}>
+            <MDTypography variant="caption" color="text">
+              {api.params?.length || 0} params
+            </MDTypography>
+            {!api.param_match && mismatch.not_in_tools_info && (
+              <Chip label="Not in tools_info" size="small" color="error" variant="outlined" />
+            )}
+            {!api.param_match && mismatch.type_or_optional_diff?.length > 0 && (
+              <Chip
+                label={`${mismatch.type_or_optional_diff.length} diffs`}
+                size="small"
+                color="warning"
+                variant="outlined"
+              />
+            )}
+          </MDBox>
+        ),
+      };
+    });
+
+    if (!rows.length) {
+      rows.push({
+        name: (
+          <MDTypography variant="caption" color="text">
+            No API data available
+          </MDTypography>
+        ),
+        interface: "—",
+        type: "—",
+        match: "—",
+        params: "—",
+      });
+    }
+
+    return { columns, rows };
+  }, [apis]);
+
+  const duplicatesTable = useMemo(() => {
+    const columns = [
+      { Header: "API Name", accessor: "apiName", width: "30%", align: "left" },
+      { Header: "Count", accessor: "count", align: "center" },
+      { Header: "Interfaces", accessor: "interfaces", align: "left" },
+    ];
+
+    const rows = duplicates.map((dup) => {
+      const involved = dup.interfaces_involved || dup.interfaces || [];
+      return {
+        apiName: (
+          <MDTypography variant="button" fontWeight="medium">
+            {dup.api_name}
+          </MDTypography>
+        ),
+        count: (
+          <Chip label={involved.length} color="warning" size="small" variant="outlined" />
+        ),
+        interfaces: (
+          <MDBox display="flex" flexWrap="wrap" gap={0.5}>
+            {involved.map((iface) => (
+              <Chip key={iface} label={iface} size="small" variant="outlined" />
+            ))}
+          </MDBox>
+        ),
+      };
+    });
+
+    if (!rows.length) {
+      rows.push({
+        apiName: (
+          <MDTypography variant="body2" color="success">
+            ✅ No duplicate APIs found
+          </MDTypography>
+        ),
+        count: "—",
+        interfaces: "—",
+      });
+    }
+
+    return { columns, rows };
+  }, [duplicates]);
+
+  const comparisonTable = useMemo(() => {
+    const columns = [
+      { Header: "Interface", accessor: "interface", width: "18%", align: "left" },
+      { Header: "Files Count", accessor: "files", align: "center" },
+      { Header: "YAML Count", accessor: "yaml", align: "center" },
+      { Header: "Files not in YAML", accessor: "missing", align: "left" },
+      { Header: "YAML entries missing files", accessor: "extra", align: "left" },
+    ];
+
+    const formatList = (items = []) => (items && items.length > 0 ? items.join(", ") : "—");
+
+    const rows = Object.entries(comparison).map(([iface, comp]) => ({
+      interface: <Chip label={iface} size="small" color="primary" variant="outlined" />,
+      files: (
+        <MDTypography variant="button" fontWeight="medium">
+          {comp.files_count ?? "—"}
+        </MDTypography>
+      ),
+      yaml: (
+        <MDTypography variant="button" fontWeight="medium">
+          {comp.yaml_count ?? "—"}
+        </MDTypography>
+      ),
+      missing: (
+        <MDTypography variant="caption" color="text">
+          {formatList(comp.missing_in_yaml)}
+        </MDTypography>
+      ),
+      extra: (
+        <MDTypography variant="caption" color="text">
+          {formatList(comp.extra_in_yaml)}
+        </MDTypography>
+      ),
+    }));
+
+    if (!rows.length) {
+      rows.push({
+        interface: (
+          <MDTypography variant="caption" color="text">
+            No comparison data available
+          </MDTypography>
+        ),
+        files: "—",
+        yaml: "—",
+        missing: "—",
+        extra: "—",
+      });
+    }
+
+    return { columns, rows };
+  }, [comparison]);
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -206,13 +504,6 @@ export default function ApiSanityDetails() {
   if (!report) {
     return null;
   }
-
-  const results = report.results || {};
-  const overall = results.summary?.overall || {
-    total_apis: 0,
-    get: { count: 0, percent: 0 },
-    set: { count: 0, percent: 0 },
-  };
 
   return (
     <DashboardLayout>
@@ -426,149 +717,14 @@ export default function ApiSanityDetails() {
                   {/* Tab 0: Per-Interface Summary */}
                   {activeTab === 0 && (
                     <Box>
-                      {results.summary?.interfaces ? (
-                        <TableContainer>
-                          <Table
-                            sx={{
-                              tableLayout: "fixed",
-                              "& th, & td": {
-                                padding: "6px 8px !important",
-                                verticalAlign: "middle",
-                                textAlign: "center",
-                              },
-                              "& th:first-of-type, & td:first-of-type": {
-                                textAlign: "left",
-                              },
-                            }}
-                          >
-                            <TableHead sx={{ backgroundColor: "action.hover" }}>
-                              <TableRow>
-                                <TableCell
-                                  align="left"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    Interface
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="center"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    Total APIs
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="center"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    GET
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="center"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    SET
-                                  </MDTypography>
-                                </TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {Object.entries(results.summary.interfaces).map(
-                                ([iface, data]) => (
-                                  <TableRow key={iface} hover>
-                                    <TableCell
-                                      align="left"
-                                      sx={{ verticalAlign: "middle" }}
-                                    >
-                                      <Chip
-                                        label={iface}
-                                        size="small"
-                                        color="primary"
-                                      />
-                                    </TableCell>
-                                    <TableCell
-                                      align="center"
-                                      sx={{ verticalAlign: "middle" }}
-                                    >
-                                      <MDTypography
-                                        variant="body2"
-                                        fontWeight="medium"
-                                      >
-                                        {data.total_apis || data.total || 0}
-                                      </MDTypography>
-                                    </TableCell>
-                                    <TableCell
-                                      align="center"
-                                      sx={{ verticalAlign: "middle" }}
-                                    >
-                                      <MDBox>
-                                        <MDTypography
-                                          variant="body2"
-                                          fontWeight="medium"
-                                          component="span"
-                                        >
-                                          {data.get?.count || 0}
-                                        </MDTypography>
-                                        <MDTypography
-                                          variant="caption"
-                                          color="text.secondary"
-                                          component="span"
-                                          ml={0.5}
-                                        >
-                                          ({data.get?.percent || 0}%)
-                                        </MDTypography>
-                                      </MDBox>
-                                    </TableCell>
-                                    <TableCell
-                                      align="center"
-                                      sx={{ verticalAlign: "middle" }}
-                                    >
-                                      <MDBox>
-                                        <MDTypography
-                                          variant="body2"
-                                          fontWeight="medium"
-                                          component="span"
-                                        >
-                                          {data.set?.count || 0}
-                                        </MDTypography>
-                                        <MDTypography
-                                          variant="caption"
-                                          color="text.secondary"
-                                          component="span"
-                                          ml={0.5}
-                                        >
-                                          ({data.set?.percent || 0}%)
-                                        </MDTypography>
-                                      </MDBox>
-                                    </TableCell>
-                                  </TableRow>
-                                )
-                              )}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      ) : (
-                        <MDTypography variant="body2" color="text.secondary">
-                          No interface summary data available
-                        </MDTypography>
-                      )}
+                      <DataTable
+                        table={summaryTable}
+                        entriesPerPage={false}
+                        canSearch={false}
+                        showTotalEntries={false}
+                        isSorted={false}
+                        noEndBorder
+                      />
                     </Box>
                   )}
 
@@ -635,108 +791,21 @@ export default function ApiSanityDetails() {
                                 </MDBox>
                               </AccordionSummary>
                               <AccordionDetails>
-                                <TableContainer>
-                                  <Table size="small">
-                                    <TableHead>
-                                      <TableRow>
-                                        <TableCell
-                                          align="left"
-                                          sx={{ verticalAlign: "middle" }}
-                                        >
-                                          API Name
-                                        </TableCell>
-                                        <TableCell
-                                          align="center"
-                                          sx={{ verticalAlign: "middle" }}
-                                        >
-                                          Type
-                                        </TableCell>
-                                        <TableCell
-                                          align="center"
-                                          sx={{ verticalAlign: "middle" }}
-                                        >
-                                          Match
-                                        </TableCell>
-                                        <TableCell
-                                          align="center"
-                                          sx={{ verticalAlign: "middle" }}
-                                        >
-                                          Parameters
-                                        </TableCell>
-                                      </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                      {ifaceApis.map((api, apiIdx) => (
-                                        <TableRow key={apiIdx} hover>
-                                          <TableCell
-                                            align="left"
-                                            sx={{ verticalAlign: "middle" }}
-                                          >
-                                            <MDTypography
-                                              variant="body2"
-                                              fontWeight="medium"
-                                            >
-                                              {api.api_name}
-                                            </MDTypography>
-                                          </TableCell>
-                                          <TableCell
-                                            align="center"
-                                            sx={{ verticalAlign: "middle" }}
-                                          >
-                                            <Chip
-                                              label={
-                                                api.classification?.toUpperCase() ||
-                                                "N/A"
-                                              }
-                                              size="small"
-                                              color={
-                                                api.classification === "get"
-                                                  ? "info"
-                                                  : "warning"
-                                              }
-                                            />
-                                          </TableCell>
-                                          <TableCell
-                                            align="center"
-                                            sx={{ verticalAlign: "middle" }}
-                                          >
-                                            <Chip
-                                              icon={
-                                                <Icon fontSize="small">
-                                                  {api.param_match
-                                                    ? "check_circle"
-                                                    : "cancel"}
-                                                </Icon>
-                                              }
-                                              label={
-                                                api.param_match
-                                                  ? "Match"
-                                                  : "Mismatch"
-                                              }
-                                              size="small"
-                                              color={
-                                                api.param_match
-                                                  ? "success"
-                                                  : "error"
-                                              }
-                                            />
-                                          </TableCell>
-                                          <TableCell
-                                            align="center"
-                                            sx={{ verticalAlign: "middle" }}
-                                          >
-                                            <MDTypography
-                                              variant="caption"
-                                              color="text.secondary"
-                                            >
-                                              {api.params?.length || 0} params
-                                            </MDTypography>
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </TableContainer>
+                                <MDBox>
+                                  <DataTable
+                                    table={
+                                      interfaceTables[ifaceName] || {
+                                        columns: [],
+                                        rows: [],
+                                      }
+                                    }
+                                    entriesPerPage={{ defaultValue: 5, entries: [5, 10, 20] }}
+                                    canSearch={false}
+                                    showTotalEntries={false}
+                                    isSorted={false}
+                                    noEndBorder
+                                  />
+                                </MDBox>
                               </AccordionDetails>
                             </Accordion>
                           );
@@ -752,340 +821,43 @@ export default function ApiSanityDetails() {
                   {/* Tab 2: All APIs */}
                   {activeTab === 2 && (
                     <Box>
-                      {results.apis && results.apis.length > 0 ? (
-                        <TableContainer>
-                          <Table>
-                            <TableHead sx={{ backgroundColor: "action.hover" }}>
-                              <TableRow>
-                                <TableCell
-                                  align="left"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    API Name
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="center"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    Interface
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="center"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    Type
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="center"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    Match
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="center"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    Parameters
-                                  </MDTypography>
-                                </TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {results.apis.map((api, idx) => (
-                                <TableRow key={idx} hover>
-                                  <TableCell
-                                    align="left"
-                                    sx={{ verticalAlign: "middle" }}
-                                  >
-                                    <MDTypography
-                                      variant="body2"
-                                      fontWeight="medium"
-                                    >
-                                      {api.api_name}
-                                    </MDTypography>
-                                  </TableCell>
-                                  <TableCell
-                                    align="center"
-                                    sx={{ verticalAlign: "middle" }}
-                                  >
-                                    <Chip
-                                      label={api.interface}
-                                      size="small"
-                                      color="primary"
-                                      variant="outlined"
-                                    />
-                                  </TableCell>
-                                  <TableCell
-                                    align="center"
-                                    sx={{ verticalAlign: "middle" }}
-                                  >
-                                    <Chip
-                                      label={
-                                        api.classification?.toUpperCase() ||
-                                        "N/A"
-                                      }
-                                      size="small"
-                                      color={
-                                        api.classification === "get"
-                                          ? "info"
-                                          : "warning"
-                                      }
-                                    />
-                                  </TableCell>
-                                  <TableCell
-                                    align="center"
-                                    sx={{ verticalAlign: "middle" }}
-                                  >
-                                    <Chip
-                                      icon={
-                                        <Icon fontSize="small">
-                                          {api.param_match
-                                            ? "check_circle"
-                                            : "cancel"}
-                                        </Icon>
-                                      }
-                                      label={
-                                        api.param_match ? "Match" : "Mismatch"
-                                      }
-                                      size="small"
-                                      color={
-                                        api.param_match ? "success" : "error"
-                                      }
-                                    />
-                                  </TableCell>
-                                  <TableCell
-                                    align="center"
-                                    sx={{ verticalAlign: "middle" }}
-                                  >
-                                    <MDTypography
-                                      variant="caption"
-                                      color="text.secondary"
-                                    >
-                                      {api.params?.length || 0} params
-                                      {!api.param_match &&
-                                        api.param_mismatch && (
-                                          <>
-                                            {api.param_mismatch
-                                              .not_in_tools_info && (
-                                              <Chip
-                                                label="Not in tools_info"
-                                                size="small"
-                                                color="error"
-                                                sx={{ ml: 1 }}
-                                              />
-                                            )}
-                                            {api.param_mismatch
-                                              .type_or_optional_diff?.length >
-                                              0 && (
-                                              <Chip
-                                                label={`${api.param_mismatch.type_or_optional_diff.length} diffs`}
-                                                size="small"
-                                                color="warning"
-                                                sx={{ ml: 1 }}
-                                              />
-                                            )}
-                                          </>
-                                        )}
-                                    </MDTypography>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      ) : (
-                        <MDTypography variant="body2" color="text.secondary">
-                          No API data available
-                        </MDTypography>
-                      )}
+                      <DataTable
+                        table={allApisTable}
+                        entriesPerPage={{ defaultValue: 10, entries: [5, 10, 25, 50] }}
+                        canSearch={false}
+                        showTotalEntries={apis.length > 0}
+                        pagination={{ variant: "gradient", color: "info" }}
+                        isSorted={false}
+                        noEndBorder
+                      />
                     </Box>
                   )}
 
                   {/* Tab 3: Duplicates */}
                   {activeTab === 3 && (
                     <Box>
-                      {results.duplicates && results.duplicates.length > 0 ? (
-                        <TableContainer>
-                          <Table>
-                            <TableHead sx={{ backgroundColor: "action.hover" }}>
-                              <TableRow>
-                                <TableCell
-                                  align="left"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    API Name
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="center"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    Count
-                                  </MDTypography>
-                                </TableCell>
-                                <TableCell
-                                  align="left"
-                                  sx={{ verticalAlign: "middle" }}
-                                >
-                                  <MDTypography
-                                    variant="caption"
-                                    fontWeight="bold"
-                                  >
-                                    Interfaces
-                                  </MDTypography>
-                                </TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {results.duplicates.map((dup, idx) => {
-                                const interfaces =
-                                  dup.interfaces_involved ||
-                                  dup.interfaces ||
-                                  [];
-                                return (
-                                  <TableRow key={idx} hover>
-                                    <TableCell
-                                      align="left"
-                                      sx={{ verticalAlign: "middle" }}
-                                    >
-                                      <MDTypography
-                                        variant="body2"
-                                        fontWeight="medium"
-                                      >
-                                        {dup.api_name}
-                                      </MDTypography>
-                                    </TableCell>
-                                    <TableCell
-                                      align="center"
-                                      sx={{ verticalAlign: "middle" }}
-                                    >
-                                      <Chip
-                                        label={interfaces.length}
-                                        color="warning"
-                                        size="small"
-                                      />
-                                    </TableCell>
-                                    <TableCell
-                                      align="left"
-                                      sx={{ verticalAlign: "middle" }}
-                                    >
-                                      {interfaces.map((iface, i) => (
-                                        <Chip
-                                          key={i}
-                                          label={iface}
-                                          size="small"
-                                          variant="outlined"
-                                          sx={{ mr: 0.5, mb: 0.5 }}
-                                        />
-                                      ))}
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      ) : (
-                        <MDBox textAlign="center" py={4}>
-                          <Icon sx={{ fontSize: 60, opacity: 0.3, mb: 2 }}>
-                            check_circle
-                          </Icon>
-                          <MDTypography variant="body2" color="text.secondary">
-                            No duplicate APIs found
-                          </MDTypography>
-                        </MDBox>
-                      )}
+                      <DataTable
+                        table={duplicatesTable}
+                        entriesPerPage={false}
+                        canSearch={false}
+                        showTotalEntries={false}
+                        isSorted={false}
+                        noEndBorder
+                      />
                     </Box>
                   )}
 
                   {/* Tab 4: Comparison */}
                   {activeTab === 4 && (
                     <Box>
-                      {results.interface_file_yaml_comparison &&
-                      Object.keys(results.interface_file_yaml_comparison)
-                        .length > 0 ? (
-                        Object.entries(
-                          results.interface_file_yaml_comparison
-                        ).map(([iface, comp], idx) => (
-                          <Accordion key={idx}>
-                            <AccordionSummary
-                              expandIcon={<Icon>expand_more</Icon>}
-                            >
-                              <MDBox
-                                display="flex"
-                                alignItems="center"
-                                width="100%"
-                              >
-                                <Chip
-                                  label={iface}
-                                  color="primary"
-                                  size="small"
-                                  sx={{ mr: 2 }}
-                                />
-                                <MDTypography
-                                  variant="body2"
-                                  color="text.primary"
-                                >
-                                  Comparison Data
-                                </MDTypography>
-                              </MDBox>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                              <Box
-                                sx={{
-                                  backgroundColor: "action.hover",
-                                  p: 2,
-                                  borderRadius: 1,
-                                  fontFamily: "monospace",
-                                  fontSize: "0.875rem",
-                                }}
-                              >
-                                <pre
-                                  style={{ margin: 0, whiteSpace: "pre-wrap" }}
-                                >
-                                  {JSON.stringify(comp, null, 2)}
-                                </pre>
-                              </Box>
-                            </AccordionDetails>
-                          </Accordion>
-                        ))
-                      ) : (
-                        <MDTypography variant="body2" color="text.secondary">
-                          No comparison data available
-                        </MDTypography>
-                      )}
+                      <DataTable
+                        table={comparisonTable}
+                        entriesPerPage={{ defaultValue: 10, entries: [5, 10, 20, 50] }}
+                        canSearch={false}
+                        showTotalEntries={Object.keys(comparison).length > 0}
+                        isSorted={false}
+                        noEndBorder
+                      />
                     </Box>
                   )}
                 </MDBox>
