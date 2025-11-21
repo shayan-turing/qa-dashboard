@@ -579,7 +579,7 @@ export default function Sanity() {
                               width="100%"
                             >
                               <Icon sx={{ mr: 1 }}>link</Icon>
-                              <MDTypography variant="body2" fontWeight="medium">
+                              <MDTypography variant="body2" fontWeight="medium"  color="text.secondary">
                                 {rel.relationship}
                               </MDTypography>
                               <MDBox ml="auto" mr={2}>
@@ -646,6 +646,7 @@ export default function Sanity() {
                                   <MDTypography
                                     variant="body2"
                                     fontWeight="medium"
+                                     color="text.secondary"
                                   >
                                     {rel.relationship}
                                   </MDTypography>
